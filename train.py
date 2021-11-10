@@ -24,9 +24,9 @@ parser= argparse.ArgumentParser()
 
 parser.add_argument('--mode', type=str, default='train')
 parser.add_argument('--load_mode', type=int, default=1)
-parser.add_argument('--data_path', type=str, default='/home/kevin/Documents/master-project/ldct_nonlocal/patient')
-parser.add_argument('--saved_path', type=str, default='/home/kevin/Documents/master-project/ldct_nonlocal/patient/data/npy_img/')
-parser.add_argument('--save_path', type=str, default='/home/kevin/Documents/master-project/simple_gan/model/')
+parser.add_argument('--data_path', type=str, default='./patient')
+parser.add_argument('--saved_path', type=str, default='./patient/data/npy_img/')
+parser.add_argument('--save_path', type=str, default='./model/')
 parser.add_argument('--test_patient', type=str, default='L064')
 
 parser.add_argument('--transform', type=bool, default=False)
@@ -39,7 +39,7 @@ parser.add_argument('--lr', type=float, default=0.0002) # Defailt = 1e-3
 
 parser.add_argument('--num_epochs', type=int, default=10)
 parser.add_argument('--num_workers', type=int, default=7)
-parser.add_argument('--load_chkpt', type=bool, default=True)
+parser.add_argument('--load_chkpt', type=bool, default=False)
 
 args = parser.parse_args()
 

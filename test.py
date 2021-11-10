@@ -19,10 +19,10 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument('--mode', type=str, default='test')
 parser.add_argument('--load_mode', type=int, default=1)
-parser.add_argument('--saved_path', type=str, default='/home/kevin/Documents/master-project/ldct_nonlocal/patient/data/npy_img/')
-parser.add_argument('--save_path', type=str, default='/home/kevin/Documents/master-project/simple_gan/model/')
-parser.add_argument('--results_path', type=str, default='/home/kevin/Documents/master-project/simple_gan/model/results/')
-parser.add_argument('--data_path', type=str, default='/home/kevin/Documents/master-project/ldct_nonlocal/patient/Checkpoint/save/fig/')
+parser.add_argument('--saved_path', type=str, default='./patient/data/npy_img/')
+parser.add_argument('--save_path', type=str, default='./model/')
+parser.add_argument('--results_path', type=str, default='./model/results/')
+parser.add_argument('--data_path', type=str, default='./patient/Checkpoint/save/fig/')
 parser.add_argument('--test_patient', type=str, default='L064')
 parser.add_argument('--result_fig', type=bool, default=True)
 
@@ -115,14 +115,6 @@ pred_psnr_avg, pred_ssim_avg, pred_rmse_avg = 0, 0, 0
 
 with torch.no_grad():
     for i, (x, y) in enumerate(data_loader):
-    # for i in range(20):
-
-        # OLD MODEL BELOW
-        # x = np.load(args.saved_path+'L064_'+str(i)+'_input.npy')
-        # y = np.load(args.saved_path+'L064_'+str(i)+'_target.npy')
-        # input = Variable(torch.from_numpy(x).type(Tensor))
-        # target = Variable(torch.from_numpy(y).type(Tensor))
-
         shape_ = x.shape[-1]
 
         # NEW MODEL TEST
