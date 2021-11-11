@@ -124,7 +124,7 @@ for epoch in range(cur_epoch, args.num_epochs):
 			y = y.view(-1, 1, shape_, shape_)
 
 		x = x.cuda()
-		y = y.cuda()
+		# y = y.cuda()
 
 		# NEW PREDICTIONS
 		pred = g_net(x)
