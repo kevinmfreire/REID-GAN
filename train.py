@@ -96,7 +96,6 @@ else:
 
 # Losses
 Dloss = DLoss()
-# Dloss.cuda()
 Gloss = GLoss()
 Gloss = to_cuda(Gloss)
 
@@ -105,7 +104,6 @@ torch.autograd.set_detect_anomaly(True)
 for epoch in range(cur_epoch, args.num_epochs):
 	g_net.train()
 	for i, (x, y) in enumerate(data_loader):
-	# for i in range(20):
 		total_iters += 1
 		shape_ = x.shape[-1]
 
