@@ -40,7 +40,7 @@ parser.add_argument('--lr', type=float, default=0.0002) # Defailt = 1e-3
 
 parser.add_argument('--num_epochs', type=int, default=10)
 parser.add_argument('--num_workers', type=int, default=7)
-parser.add_argument('--load_chkpt', type=bool, default=False)
+parser.add_argument('--load_chkpt', type=bool, default=True)
 
 args = parser.parse_args()
 
@@ -66,7 +66,7 @@ if args.load_chkpt:
 	whole_model = torch.load(args.save_path+ 'latest_ckpt.pth.tar')
 	netG_state_dict,optG_state_dict = whole_model['netG_state_dict'], whole_model['optG_state_dict']
 	netD_state_dict,optD_state_dict = whole_model['netD_state_dict'], whole_model['optD_state_dict']
-	c = GNet()
+	g_net = GNet()
 	g_net = to_cuda(g_net)
 	d_net = DNet()
 	d_net = to_cuda(d_net)
@@ -80,7 +80,7 @@ if args.load_chkpt:
 	total_iters = whole_model['total_iters']
 	lr = whole_model['lr']
 	g_net = torch.nn.DataParallel(g_net, device_ids=[0, 1])
-	netD = torch.nn.DataParallel(g_net, device_ids=[0, 1])
+	d_net = torch.nn.DataParallel(d_net, device_ids=[0, 1])
 	print('Current Epoch:{}, Total Iters: {}, Learning rate: {}, Batch size: {}'.format(cur_epoch, total_iters, lr, args.batch_size))
 else:
 	print('Training model from scrath')

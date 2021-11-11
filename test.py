@@ -37,21 +37,9 @@ parser.add_argument('--patch_n', type=int, default=8)
 parser.add_argument('--patch_size', type=int, default=120)
 parser.add_argument('--batch_size', type=int, default=4)
 
-
-
-
-
 parser.add_argument('--num_workers', type=int, default=7)
 
-
-
-
-
-
 parser.add_argument('--lr', type=float, default=0.0002) # Default = 1e-3
-
-
-
 
 args = parser.parse_args()
 
