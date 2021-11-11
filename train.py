@@ -28,6 +28,7 @@ parser.add_argument('--data_path', type=str, default='./patient')
 parser.add_argument('--saved_path', type=str, default='./patient/data/npy_img/')
 parser.add_argument('--save_path', type=str, default='./model/')
 parser.add_argument('--test_patient', type=str, default='L064')
+parser.add_argument('--save_iters', type=int, default=20)
 
 parser.add_argument('--transform', type=bool, default=False)
 # if patch training, batch size is (--patch_n * --batch_size)
@@ -143,28 +144,23 @@ for epoch in range(cur_epoch, args.num_epochs):
 		optimizer_generator.step()
 
 		print(f'losses generator : {gloss.item()}, discriminator : {dloss.item()}')
-		# print(f'losses generator : {generator_loss}, discriminator : {discriminator_loss}')
+
+		# Saving model after every epoch
+		if total_iters % args.save_iters == 0:
+			if not os.path.exists(args.save_path):
+				os.makedirs(args.save_path)
+				print('Create path : {}'.format(args.save_path))
+			print('Saving model to: ' + args.save_path)
+			saved_model = {
+				'epoch': epoch ,
+				'netG_state_dict': g_net.state_dict(),
+				'optG_state_dict': optimizer_generator.state_dict(),
+				'netD_state_dict': d_net.state_dict(),
+				'optD_state_dict': optimizer_discriminator.state_dict(),
+				'lr': lr,
+				'total_iters': total_iters
+			}
+			torch.save(saved_model, '{}iter_{}_ckpt.pth.tar'.format(args.save_path, total_iters))
+			torch.save(saved_model, '{}latest_ckpt.pth.tar'.format(args.save_path))
 
 	losses.append((gloss.item(), dloss.item()))
-	# losses.append((generator_loss.item(), discriminator_loss.item()))
-
-	# Saving model after every epoch
-	if not os.path.exists(args.save_path):
-		os.makedirs(args.save_path)
-		print('Create path : {}'.format(args.save_path))
-	print('Saving model to: ' + args.save_path)
-	saved_model = {
-		'epoch': epoch ,
-		'netG_state_dict': g_net.state_dict(),
-		'optG_state_dict': optimizer_generator.state_dict(),
-		'netD_state_dict': d_net.state_dict(),
-		'optD_state_dict': optimizer_discriminator.state_dict(),
-		'lr': lr,
-		'total_iters': total_iters
-	}
-	if not os.path.exists(args.save_path):
-		os.makedirs(args.save_path)
-		print('Create path : {}'.format(args.save_path))
-	# torch.save(saved_model, '{}iter_{}_ckpt.pth.tar'.format(args.save_path, total_iters))
-	torch.save(saved_model, '{}iter_{}_ckpt.pth.tar'.format(args.save_path, total_iters))
-	torch.save(saved_model, '{}latest_ckpt.pth.tar'.format(args.save_path))
