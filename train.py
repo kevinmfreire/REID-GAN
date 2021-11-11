@@ -57,15 +57,18 @@ data_loader = get_loader(mode=args.mode,
 cuda_is_present = True if torch.cuda.is_available() else False
 Tensor = torch.cuda.FloatTensor if cuda_is_present else torch.FloatTensor
 
+def to_cuda(data):
+    	return data.cuda() if cuda_is_present else data
+
 if args.load_chkpt:
 	print('Loading Chekpoint')
 	whole_model = torch.load(args.save_path+ 'latest_ckpt.pth.tar')
 	netG_state_dict,optG_state_dict = whole_model['netG_state_dict'], whole_model['optG_state_dict']
 	netD_state_dict,optD_state_dict = whole_model['netD_state_dict'], whole_model['optD_state_dict']
 	g_net = GNet()
-	whicg_net = g_net.cuda()
+	g_net = to_cuda(g_net)
 	d_net = DNet()
-	d_net=d_net.cuda()
+	d_net = to_cuda(d_net)
 	optimizer_generator = torch.optim.Adam(g_net.parameters())
 	optimizer_discriminator= torch.optim.Adam(d_net.parameters())
 	d_net.load_state_dict(netD_state_dict)
@@ -81,9 +84,9 @@ if args.load_chkpt:
 else:
 	print('Training model from scrath')
 	g_net = GNet()
-	g_net = g_net.cuda()
+	g_net = to_cuda(g_net)
 	d_net = DNet()
-	d_net=d_net.cuda()
+	d_net = to_cuda(d_net)
 	optimizer_generator = torch.optim.Adam(g_net.parameters(), lr=args.lr)
 	optimizer_discriminator = torch.optim.Adam(d_net.parameters(), lr=4*args.lr)
 	cur_epoch = 0
@@ -94,13 +97,7 @@ else:
 Dloss = DLoss()
 # Dloss.cuda()
 Gloss = GLoss()
-Gloss.cuda()
-
-# if cuda_is_present:
-# 	g_net.cuda()
-# 	d_net.cuda()
-# 	Dloss.cuda()
-# 	Gloss.cuda()
+Gloss = to_cuda(Gloss)
 
 losses = []
 torch.autograd.set_detect_anomaly(True)
@@ -123,8 +120,8 @@ for epoch in range(cur_epoch, args.num_epochs):
 			x = x.view(-1, 1, shape_, shape_)
 			y = y.view(-1, 1, shape_, shape_)
 
-		x = x.cuda()
-		# y = y.cuda()
+		x = to_cuda(x)
+		y = to_cuda(y)
 
 		# NEW PREDICTIONS
 		pred = g_net(x)
