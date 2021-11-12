@@ -40,7 +40,7 @@ parser.add_argument('--lr', type=float, default=0.0002) # Defailt = 1e-3
 
 parser.add_argument('--num_epochs', type=int, default=10)
 parser.add_argument('--num_workers', type=int, default=7)
-parser.add_argument('--load_chkpt', type=bool, default=True)
+parser.add_argument('--load_chkpt', type=bool, default=False)
 
 args = parser.parse_args()
 
