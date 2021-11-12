@@ -96,6 +96,7 @@ else:
 
 # Losses
 Dloss = DLoss()
+Dloss = to_cuda(Dloss)
 Gloss = GLoss()
 Gloss = to_cuda(Gloss)
 
