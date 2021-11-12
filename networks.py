@@ -10,7 +10,7 @@ class GNet(nn.Module):
         super(GNet, self).__init__()
         self.input_channel=1
         cnum = 32
-        size = 256
+        size = 64
         self.conv1 = nn.Sequential(
             nn.Conv2d(1, cnum, 9, 1,padding=4),
             nn.BatchNorm2d(cnum),
