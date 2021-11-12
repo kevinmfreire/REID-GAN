@@ -7,7 +7,15 @@ from torch.autograd import Variable
 import torchvision.models as models
 from torchvision.models._utils import IntermediateLayerGetter
 
+# Check CUDA's presence
+cuda_is_present = True if torch.cuda.is_available() else False
+Tensor = torch.cuda.FloatTensor if cuda_is_present else torch.FloatTensor
+
+def to_cuda(data):
+    	return data.cuda() if cuda_is_present else data
+
 MSEloss = torch.nn.MSELoss()
+MSEloss = to_cuda(MSEloss)
 
 def gaussian(window_size, sigma):
     gauss = torch.Tensor([exp(-(x - window_size//2)**2/float(2*sigma**2)) for x in range(window_size)])
