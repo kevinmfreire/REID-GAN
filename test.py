@@ -35,7 +35,7 @@ parser.add_argument('--transform', type=bool, default=False)
 # if patch training, batch size is (--patch_n * --batch_size)
 parser.add_argument('--patch_n', type=int, default=8)
 parser.add_argument('--patch_size', type=int, default=120)
-parser.add_argument('--batch_size', type=int, default=4)
+parser.add_argument('--batch_size', type=int, default=10)
 
 parser.add_argument('--num_workers', type=int, default=7)
 

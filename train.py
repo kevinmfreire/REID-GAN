@@ -32,8 +32,8 @@ parser.add_argument('--save_iters', type=int, default=20)
 
 parser.add_argument('--transform', type=bool, default=False)
 # if patch training, batch size is (--patch_n * --batch_size)
-parser.add_argument('--patch_n', type=int, default=None)		# default = 4
-parser.add_argument('--patch_size', type=int, default=None)	# default = 100
+parser.add_argument('--patch_n', type=int, default=8)		# default = 4
+parser.add_argument('--patch_size', type=int, default=128)	# default = 100
 parser.add_argument('--batch_size', type=int, default=5)	# default = 5
 
 parser.add_argument('--lr', type=float, default=0.0002) # Defailt = 1e-3
@@ -111,11 +111,13 @@ for epoch in range(cur_epoch, args.num_epochs):
 		x = x.unsqueeze(0).float()
 		y = y.unsqueeze(0).float()
 
-		if args.patch_size:     #patch training
+		# patch training
+		if args.patch_size:
 			x = x.view(-1, 1, args.patch_size, args.patch_size)
 			y = y.view(-1, 1, args.patch_size, args.patch_size)
 
-		if args.batch_size:     #batch training
+		# batch training without any patch size
+		if args.batch_size and args.patch_size == False:
 			x = x.view(-1, 1, shape_, shape_)
 			y = y.view(-1, 1, shape_, shape_)
 
