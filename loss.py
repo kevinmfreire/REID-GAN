@@ -30,6 +30,7 @@ def create_window(window_size, channel):
 def get_feature_layer_vgg16(image):
     image = torch.cat([image,image,image],1)
     vgg16 = models.vgg16(pretrained=True)
+    vgg16 = to_cuda(vgg16)
     return_layers = {'8': 'out_layer8'}
     # THIS PRINTS UP TO THE OUTPUT OF THE SECOND CONV2_2 LAYERS FOR FEATURE EXTRACTION
     # (0): Conv2d(3, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
