@@ -12,15 +12,15 @@ class GNet(nn.Module):
         cnum = 32
         size = 64
         self.conv1 = nn.Sequential(
-            nn.Conv2d(1, cnum, 9, 1,padding=4),
+            nn.Conv2d(1, cnum, 9, 1, padding=4),
             nn.BatchNorm2d(cnum),
             nn.LeakyReLU(0.2, inplace=True)
         )
         self.conv2 = nn.Sequential(
-            nn.Conv2d(cnum, 2*cnum, 3, 1),
+            nn.Conv2d(cnum, 2*cnum, 3, 1, padding=1),
             nn.BatchNorm2d(2*cnum),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Conv2d(2*cnum, 4*cnum, 3, 1),
+            nn.Conv2d(2*cnum, 4*cnum, 3, 1, padding=1),
             nn.BatchNorm2d(4*cnum),
             nn.LeakyReLU(0.2, inplace=True)
         )
@@ -46,35 +46,47 @@ class GNet(nn.Module):
         )
 
         self.conv3 = nn.Sequential(
-            nn.Conv2d(cnum, 1, 9, 1,padding=4),
+            nn.Conv2d(cnum, 1, 9, 1, padding=4),
             nn.BatchNorm2d(self.input_channel),
             nn.Tanh()
         )
 
+        self.norm = nn.BatchNorm2d(self.input_channel)
+
+        self.pool = nn.MaxPool2d(kernel_size=(2,2))
+
     
     def forward(self, input):
 
+        img = self.norm(input)
+
         x1 = self.conv1(input)
+        
+        pool1 = self.pool(x1)
+        
+        x = self.conv2(pool1)
 
-        x = self.conv2(x1)
+        pool2 = self.pool(x)
 
-        x2 = self.residual(x)
+        res1 = self.residual(pool2)
 
-        x = x2.add(x)
+        x = res1.add(pool2)
 
-        x3 = self.residual(x)
+        res2 = self.residual(x)
 
-        x = x3.add(x)
+        x = res2.add(x)
 
-        x4 = self.residual(x)
+        res3 = self.residual(x)
 
-        x = x4.add(x)
+        x = res3.add(x)
 
-        x5 = self.deconv(x)
+        x2 = self.deconv(x)
 
-        x = x5.add(x1)
+        x = x2.add(x1)
 
-        x = self.conv3(x)
+        x3 = self.conv3(x)
+
+        x = x3.add(img)
 
         x = x + 1.0
 
