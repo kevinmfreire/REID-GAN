@@ -3,6 +3,7 @@ import argparse
 #import imageio
 import numpy as np
 import matplotlib.pyplot as plt
+import time
 
 # Importing torch modules
 import torch
@@ -28,7 +29,10 @@ parser.add_argument('--data_path', type=str, default='./patient')
 parser.add_argument('--saved_path', type=str, default='./patient/data/npy_img/')
 parser.add_argument('--save_path', type=str, default='./model/')
 parser.add_argument('--test_patient', type=str, default='L064')
-parser.add_argument('--save_iters', type=int, default=20)
+
+parser.add_argument('--save_iters', type=int, default=100)
+parser.add_argument('--print_iters', type=int, default=20)
+parser.add_argument('--decay_iters', type=int, default=1000)
 
 parser.add_argument('--transform', type=bool, default=False)
 # if patch training, batch size is (--patch_n * --batch_size)
@@ -36,7 +40,7 @@ parser.add_argument('--patch_n', type=int, default=4)		# default = 4
 parser.add_argument('--patch_size', type=int, default=128)	# default = 100
 parser.add_argument('--batch_size', type=int, default=5)	# default = 5
 
-parser.add_argument('--lr', type=float, default=0.0002) # Defailt = 1e-3
+parser.add_argument('--lr', type=float, default=1e-3) # Defailt = 1e-3
 
 parser.add_argument('--num_epochs', type=int, default=10)
 parser.add_argument('--num_workers', type=int, default=7)
@@ -102,6 +106,7 @@ Gloss = to_cuda(Gloss)
 
 losses = []
 torch.autograd.set_detect_anomaly(True)
+start_time = time.time()
 for epoch in range(cur_epoch, args.num_epochs):
 	g_net.train()
 	for i, (x, y) in enumerate(data_loader):
@@ -144,7 +149,19 @@ for epoch in range(cur_epoch, args.num_epochs):
 		gloss.backward()
 		optimizer_generator.step()
 
-		print(f'losses generator : {gloss.item()}, discriminator : {dloss.item()}')
+		# Print
+		if total_iters % args.print_iters == 0:
+			print("STEP [{}], EPOCH [{}/{}], ITER [{}/{}] \nG_LOSS: {:.8f}, D_LOSS: {:.8f}, D_LOSS: {:.14f}, TIME: {:.1f}s".format(total_iters, epoch, 
+																										args.num_epochs, i+1, 
+																										len(data_loader), gloss.item(), dloss.item()
+																										,time.time() - start_time))
+
+		if total_iters % args.decay_iters == 0:
+			lr = lr * 0.5
+			for param_group in optimizer_generator.param_groups:
+				param_group['lr'] = lr
+			for param_group in optimizer_discriminator.param_groups:
+				param_group['lr'] = 4*lr
 
 		# Saving model after every epoch
 		if total_iters % args.save_iters == 0:
