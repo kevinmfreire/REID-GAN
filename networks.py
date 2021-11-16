@@ -58,15 +58,15 @@ class GNet(nn.Module):
     
     def forward(self, input):
 
-        img = self.norm(input)
+        # img = self.norm(input)
 
         x1 = self.conv1(input)
         
         pool1 = self.pool(x1)
         
-        x = self.conv2(pool1)
+        x2 = self.conv2(pool1)
 
-        pool2 = self.pool(x)
+        pool2 = self.pool(x2)
 
         res1 = self.residual(pool2)
 
@@ -80,15 +80,15 @@ class GNet(nn.Module):
 
         x = res3.add(x)
 
-        x2 = self.deconv(x)
+        x3 = self.deconv(x)
 
-        x = x2.add(x1)
+        x = x3.add(x1)
 
-        x3 = self.conv3(x)
+        x4 = self.conv3(x)
 
-        x = x3.add(img)
+        # x = x3.add(img)
 
-        x = x + 1.0
+        x = x4 + 1.0
 
         x = x/2.0
 
