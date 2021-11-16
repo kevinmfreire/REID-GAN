@@ -151,7 +151,7 @@ for epoch in range(cur_epoch, args.num_epochs):
 
 		# Print
 		if total_iters % args.print_iters == 0:
-			print("STEP [{}], EPOCH [{}/{}], ITER [{}/{}] \nG_LOSS: {:.8f}, D_LOSS: {:.8f}, D_LOSS: {:.14f}, TIME: {:.1f}s".format(total_iters, epoch, 
+			print("STEP [{}], EPOCH [{}/{}], ITER [{}/{}] \nG_LOSS: {:.8f}, D_LOSS: {:.14f}, TIME: {:.1f}s".format(total_iters, epoch, 
 																										args.num_epochs, i+1, 
 																										len(data_loader), gloss.item(), dloss.item()
 																										,time.time() - start_time))
