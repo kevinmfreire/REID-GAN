@@ -39,6 +39,7 @@ parser.add_argument('--transform', type=bool, default=False)
 parser.add_argument('--patch_n', type=int, default=4)		# default = 4
 parser.add_argument('--patch_size', type=int, default=128)	# default = 100
 parser.add_argument('--batch_size', type=int, default=5)	# default = 5
+parser.add_argument('--image_size', type=int, default=512)
 
 parser.add_argument('--lr', type=float, default=1e-3) # Defailt = 1e-3
 
@@ -65,12 +66,14 @@ Tensor = torch.cuda.FloatTensor if cuda_is_present else torch.FloatTensor
 def to_cuda(data):
     	return data.cuda() if cuda_is_present else data
 
+image_size = args.image_size if args.patch_size == False else args.patch_size
+
 if args.load_chkpt:
 	print('Loading Chekpoint')
 	whole_model = torch.load(args.save_path+ 'latest_ckpt.pth.tar')
 	netG_state_dict,optG_state_dict = whole_model['netG_state_dict'], whole_model['optG_state_dict']
 	netD_state_dict,optD_state_dict = whole_model['netD_state_dict'], whole_model['optD_state_dict']
-	g_net = GNet()
+	g_net = GNet(image_size)
 	g_net = to_cuda(g_net)
 	d_net = DNet()
 	d_net = to_cuda(d_net)
@@ -88,7 +91,7 @@ if args.load_chkpt:
 	print('Current Epoch:{}, Total Iters: {}, Learning rate: {}, Batch size: {}'.format(cur_epoch, total_iters, lr, args.batch_size))
 else:
 	print('Training model from scrath')
-	g_net = GNet()
+	g_net = GNet(image_size)
 	g_net = to_cuda(g_net)
 	d_net = DNet()
 	d_net = to_cuda(d_net)

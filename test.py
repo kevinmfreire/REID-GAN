@@ -36,6 +36,7 @@ parser.add_argument('--transform', type=bool, default=False)
 parser.add_argument('--patch_n', type=int, default=8)
 parser.add_argument('--patch_size', type=int, default=120)
 parser.add_argument('--batch_size', type=int, default=10)
+parser.add_argument('--image_size', type=int, default=512)
 
 parser.add_argument('--num_workers', type=int, default=7)
 
@@ -53,6 +54,12 @@ data_loader = get_loader(mode=args.mode,
                              batch_size=(args.batch_size if args.mode=='train' else 1),
                              num_workers=args.num_workers)
 
+# Check CUDA's presence
+cuda_is_present = True if torch.cuda.is_available() else False
+Tensor = torch.cuda.FloatTensor if cuda_is_present else torch.FloatTensor
+
+def to_cuda(data):
+    	return data.cuda() if cuda_is_present else data
 
 def denormalize_(image):
     image = image * (args.norm_range_max - args.norm_range_min) + args.norm_range_min
@@ -93,8 +100,8 @@ Tensor = torch.cuda.FloatTensor if cuda_is_present else torch.FloatTensor
 # load   
 whole_model = torch.load(args.save_path + 'latest_ckpt.pth.tar')
 netG_state_dict= whole_model['netG_state_dict']
-netG = GNet()
-# netG = netG.cuda()
+netG = GNet(args.image_size)
+netG = to_cuda(netG)
 netG.load_state_dict(netG_state_dict)
 
 # compute PSNR, SSIM, RMSE
@@ -108,6 +115,9 @@ with torch.no_grad():
         # NEW MODEL TEST
         x = x.unsqueeze(0).float()
         y = y.unsqueeze(0).float()
+
+        x = to_cuda(x)
+        y = to_cuda(y)
         
         pred = netG(x)
 

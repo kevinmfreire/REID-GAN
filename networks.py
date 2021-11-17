@@ -6,11 +6,11 @@ from torch.autograd import Variable
 import numpy as np
 
 class GNet(nn.Module):
-    def __init__(self):
+    def __init__(self, image_size):
         super(GNet, self).__init__()
         self.input_channel=1
         cnum = 32
-        size = 64
+        size = image_size//2
         self.conv1 = nn.Sequential(
             nn.Conv2d(1, cnum, 9, 1, padding=4),
             nn.BatchNorm2d(cnum),
