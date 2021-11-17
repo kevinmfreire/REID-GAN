@@ -30,7 +30,7 @@ parser.add_argument('--saved_path', type=str, default='./patient/data/npy_img/')
 parser.add_argument('--save_path', type=str, default='./model/')
 parser.add_argument('--test_patient', type=str, default='L064')
 
-parser.add_argument('--save_iters', type=int, default=305)
+parser.add_argument('--save_iters', type=int, default=500)
 parser.add_argument('--print_iters', type=int, default=20)
 parser.add_argument('--decay_iters', type=int, default=1000)
 
@@ -43,7 +43,7 @@ parser.add_argument('--image_size', type=int, default=512)
 
 parser.add_argument('--lr', type=float, default=1e-3) # Defailt = 1e-3
 
-parser.add_argument('--num_epochs', type=int, default=10)
+parser.add_argument('--num_epochs', type=int, default=100)
 parser.add_argument('--num_workers', type=int, default=7)
 parser.add_argument('--load_chkpt', type=bool, default=False)
 
