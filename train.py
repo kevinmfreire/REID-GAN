@@ -183,11 +183,5 @@ for epoch in range(cur_epoch, args.num_epochs):
 			}
 			torch.save(saved_model, '{}iter_{}_ckpt.pth.tar'.format(args.save_path, total_iters))
 			torch.save(saved_model, '{}latest_ckpt.pth.tar'.format(args.save_path))
-
+	torch.save(saved_model, '{}epoch_{}_ckpt.pth.tar'.format(args.save_path, epoch))
 	losses.append((gloss.item(), dloss.item()))
-
-	# Adding this to save checkpoints to google drive in order to not loose progress
-	cmd1 = 'cp -av {}epoch_{}_ckpt.pth.tar /gdrive/MyDrive/model/'.format(args.save_path, epoch)
-	cmd2 = 'cp -av {}latest_ckpt.pth.tar /gdrive/MyDrive/model/'.format(args.save_path)
-	os.system(cmd1)
-	os.system(cmd2)
