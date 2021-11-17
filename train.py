@@ -30,7 +30,7 @@ parser.add_argument('--saved_path', type=str, default='./patient/data/npy_img/')
 parser.add_argument('--save_path', type=str, default='./model/')
 parser.add_argument('--test_patient', type=str, default='L064')
 
-parser.add_argument('--save_iters', type=int, default=100)
+parser.add_argument('--save_iters', type=int, default=305)
 parser.add_argument('--print_iters', type=int, default=20)
 parser.add_argument('--decay_iters', type=int, default=1000)
 
@@ -185,3 +185,9 @@ for epoch in range(cur_epoch, args.num_epochs):
 			torch.save(saved_model, '{}latest_ckpt.pth.tar'.format(args.save_path))
 
 	losses.append((gloss.item(), dloss.item()))
+
+	# Adding this to save checkpoints to google drive in order to not loose progress
+	cmd1 = 'cp -av {}epoch_{}_ckpt.pth.tar /gdrive/MyDrive/model/'.format(args.save_path, epoch)
+	cmd2 = 'cp -av {}latest_ckpt.pth.tar /gdrive/MyDrive/model/'.format(args.save_path)
+	os.system(cmd1)
+	os.system(cmd2)
