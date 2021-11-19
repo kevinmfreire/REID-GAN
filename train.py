@@ -21,10 +21,11 @@ from networks import *
 from loader import get_loader
 
 # Importing TPU modules
-import torch_xla.core.xla_model as xm
-import torch_xla.distributed.parallel_loader as pl
-import torch_xla.distributed.xla_multiprocessing as xmp
-import torch_xla.utils.serialization as xser
+# import torch_xla
+# import torch_xla.core.xla_model as xm
+# import torch_xla.distributed.parallel_loader as pl
+# import torch_xla.distributed.xla_multiprocessing as xmp
+# import torch_xla.utils.serialization as xser
 
 
 parser= argparse.ArgumentParser()
@@ -36,7 +37,7 @@ parser.add_argument('--saved_path', type=str, default='./patient/data/npy_img/')
 parser.add_argument('--save_path', type=str, default='./model/')
 parser.add_argument('--test_patient', type=str, default='L064')
 
-parser.add_argument('--save_iters', type=int, default=500)
+parser.add_argument('--save_iters', type=int, default=10)
 parser.add_argument('--print_iters', type=int, default=20)
 parser.add_argument('--decay_iters', type=int, default=1000)
 
@@ -47,13 +48,13 @@ parser.add_argument('--patch_size', type=int, default=128)	# default = 100
 parser.add_argument('--batch_size', type=int, default=10)	# default = 5
 parser.add_argument('--image_size', type=int, default=512)
 
-parser.add_argument('--lr', type=float, default=1e-3) # Defailt = 1e-3
+parser.add_argument('--lr', type=float, default=2e-3) # Defailt = 1e-3
 
 parser.add_argument('--num_epochs', type=int, default=100)
 parser.add_argument('--num_workers', type=int, default=7)
-parser.add_argument('--load_chkpt', type=bool, default=False)
+parser.add_argument('--load_chkpt', type=bool, default=True)
 
-parser.add_argument('--tpu_mode', type=bool, default=True)
+parser.add_argument('--tpu_mode', type=bool, default=False)
 
 args = parser.parse_args()
 
@@ -79,20 +80,20 @@ tpu_mode = args.tpu_mode
 
 if tpu_mode == True:
 	device = xm.xla_device()
-	data_loader = pl.MpDeviceLoader(data_loader, device)
+	# data_loader = pl.MpDeviceLoader(data_loader, device)
 
 # For TPU optimizers
 def opt_step(optimizer):
-    	return xm.optimizer_step(optimizer) if tpu_mode == True else optimizer.step()
+    	return optimizer.step() if tpu_mode == False else xm.optimizer_step(optimizer)
 
-def save_model(model, dir):
-    	return torch.save(model, dir) if tpu_mode == False else xser.save(model, dir)
+def save_model(model, dir_):
+    	return torch.save(model, dir_) if tpu_mode == False else xser.save(model, dir_)
 
 def load_model(path):
     	return torch.load(path) if tpu_mode == False else xser.load(path)
 
 
-image_size = args.image_size if args.patch_size == False else args.patch_size
+image_size = args.image_size if args.patch_size == None else args.patch_size
 
 if args.load_chkpt:
 	print('Loading Chekpoint')
@@ -152,7 +153,7 @@ for epoch in range(cur_epoch, args.num_epochs):
 			y = y.view(-1, 1, args.patch_size, args.patch_size)
 
 		# If batch training without any patch size
-		if args.batch_size and args.patch_size == False:
+		if args.batch_size and args.patch_size == None:
 			x = x.view(-1, 1, shape_, shape_)
 			y = y.view(-1, 1, shape_, shape_)
 
@@ -176,7 +177,7 @@ for epoch in range(cur_epoch, args.num_epochs):
 		# TRAINING GENERATOR
 		optimizer_generator.zero_grad()
 		g_net.zero_grad()
-		gloss = Gloss(Dg, pred, y)
+		gloss = Gloss(Dg, pred, y, tpu_mode)
 		gloss.backward()
 		# optimizer_generator.step()
 		opt_step(optimizer_generator)
@@ -211,8 +212,8 @@ for epoch in range(cur_epoch, args.num_epochs):
 				'total_iters': total_iters
 			}
 			# torch.save(saved_model, '{}iter_{}_ckpt.pth.tar'.format(args.save_path, total_iters))
-			# torch.save(saved_model, '{}latest_ckpt.pth.tar'.format(args.save_path))
-			save_model(saved_model, '{}latest_ckpt.pth.tar'.format(args.save_path))
+			torch.save(saved_model, '{}latest_ckpt.pth.tar'.format(args.save_path))
+			# save_model(saved_model, '{}latest_ckpt.pth.tar'.format(args.save_path))
 			cmd = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/model/'.format(args.save_path)
 			os.system(cmd)
 	# Saving model after every epoch
