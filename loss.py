@@ -41,7 +41,7 @@ def create_window(window_size, channel):
     # ...
     # (7): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
     # (8): ReLU(inplace=True)
-def get_feature_layer_vgg16(image, tpu_mode):
+def get_feature_layer_vgg16(image):
     image = torch.cat([image,image,image],1)
     vgg16 = models.vgg16(pretrained=True)
     vgg16 = to_cuda(vgg16) if tpu_mode == False else vgg16.to(device)
@@ -50,9 +50,9 @@ def get_feature_layer_vgg16(image, tpu_mode):
     image_feature = output_feature(image)
     return image_feature['out_layer8']
 
-def get_feature_loss(target,prediction, tpu_mode):
-    feature_transformed_target = get_feature_layer_vgg16(target, tpu_mode)
-    feature_transformed_prediction = get_feature_layer_vgg16(prediction, tpu_mode)
+def get_feature_loss(target,prediction):
+    feature_transformed_target = get_feature_layer_vgg16(target)
+    feature_transformed_prediction = get_feature_layer_vgg16(prediction)
     feature_count = feature_transformed_target.shape[-1]
     feature_difference = feature_transformed_target-feature_transformed_prediction
     feature_loss = torch.sum(feature_difference.pow(2))
@@ -93,7 +93,7 @@ class GLoss(torch.nn.Module):
         self.FEATURE_LOSS_FACTOR = FEATURE_LOSS_FACTOR
         self.SMOOTH_LOSS_FACTOR = SMOOTH_LOSS_FACTOR
 
-    def forward(self, Dg, pred, y, tpu_mode):
+    def forward(self, Dg, pred, y):
         loss = self.ADVERSARIAL_LOSS_FACTOR * -torch.mean(torch.log(Dg)) + self.PIXEL_LOSS_FACTOR * MSEloss(y,pred) + \
-			self.FEATURE_LOSS_FACTOR * get_feature_loss(y,pred, tpu_mode) + self.SMOOTH_LOSS_FACTOR * get_smooth_loss(pred)
+			self.FEATURE_LOSS_FACTOR * get_feature_loss(y,pred) + self.SMOOTH_LOSS_FACTOR * get_smooth_loss(pred)
         return loss

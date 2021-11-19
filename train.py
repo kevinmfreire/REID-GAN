@@ -51,7 +51,7 @@ parser.add_argument('--image_size', type=int, default=512)
 parser.add_argument('--lr', type=float, default=2e-3) # Defailt = 1e-3
 
 parser.add_argument('--num_epochs', type=int, default=100)
-parser.add_argument('--num_workers', type=int, default=7)
+parser.add_argument('--num_workers', type=int, default=4)
 parser.add_argument('--load_chkpt', type=bool, default=True)
 
 parser.add_argument('--tpu_mode', type=bool, default=False)
@@ -177,7 +177,7 @@ for epoch in range(cur_epoch, args.num_epochs):
 		# TRAINING GENERATOR
 		optimizer_generator.zero_grad()
 		g_net.zero_grad()
-		gloss = Gloss(Dg, pred, y, tpu_mode)
+		gloss = Gloss(Dg, pred, y)
 		gloss.backward()
 		# optimizer_generator.step()
 		opt_step(optimizer_generator)
