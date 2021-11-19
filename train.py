@@ -43,7 +43,7 @@ parser.add_argument('--decay_iters', type=int, default=1000)
 
 parser.add_argument('--transform', type=bool, default=False)
 # if patch training, batch size is (--patch_n * --batch_size)
-parser.add_argument('--patch_n', type=int, default=8)		# default = 4
+parser.add_argument('--patch_n', type=int, default=4)		# default = 4
 parser.add_argument('--patch_size', type=int, default=128)	# default = 100
 parser.add_argument('--batch_size', type=int, default=10)	# default = 5
 parser.add_argument('--image_size', type=int, default=512)
