@@ -39,18 +39,18 @@ parser.add_argument('--test_patient', type=str, default='L064')
 
 parser.add_argument('--save_iters', type=int, default=10)
 parser.add_argument('--print_iters', type=int, default=20)
-parser.add_argument('--decay_iters', type=int, default=1000)
+parser.add_argument('--decay_iters', type=int, default=6000)
 
 parser.add_argument('--transform', type=bool, default=False)
 # if patch training, batch size is (--patch_n * --batch_size)
-parser.add_argument('--patch_n', type=int, default=4)		# default = 4
+parser.add_argument('--patch_n', type=int, default=10)		# default = 4
 parser.add_argument('--patch_size', type=int, default=128)	# default = 100
 parser.add_argument('--batch_size', type=int, default=10)	# default = 5
 parser.add_argument('--image_size', type=int, default=512)
 
 parser.add_argument('--lr', type=float, default=2e-3) # Defailt = 1e-3
 
-parser.add_argument('--num_epochs', type=int, default=100)
+parser.add_argument('--num_epochs', type=int, default=500)
 parser.add_argument('--num_workers', type=int, default=4)
 parser.add_argument('--load_chkpt', type=bool, default=True)
 
@@ -216,9 +216,10 @@ for epoch in range(cur_epoch, args.num_epochs):
 			# save_model(saved_model, '{}latest_ckpt.pth.tar'.format(args.save_path))
 			cmd = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/model/'.format(args.save_path)
 			os.system(cmd)
-	# Saving model after every epoch
-	cmd1 = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/model/epoch_{}_ckpt.pth.tar'.format(args.save_path, epoch)
-	cmd2 = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/model/'.format(args.save_path)
-	os.system(cmd1)
-	os.system(cmd2)
+	# Saving model after every 10 epoch
+	if epoch % 10 == 0:
+		cmd1 = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/model/epoch_{}_ckpt.pth.tar'.format(args.save_path, epoch)
+		cmd2 = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/model/'.format(args.save_path)
+		os.system(cmd1)
+		os.system(cmd2)
 	losses.append((gloss.item(), dloss.item()))

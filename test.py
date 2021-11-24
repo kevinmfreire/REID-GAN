@@ -100,6 +100,7 @@ Tensor = torch.cuda.FloatTensor if cuda_is_present else torch.FloatTensor
 # load   
 whole_model = torch.load(args.save_path + 'latest_ckpt.pth.tar')
 netG_state_dict= whole_model['netG_state_dict']
+epoch = whole_model['epoch']
 netG = GNet(args.image_size)
 netG = to_cuda(netG)
 netG.load_state_dict(netG_state_dict)
@@ -154,3 +155,5 @@ with torch.no_grad():
             pred=torch.Tensor(pred)
             # print(pred)
             utils.save_image(pred, os.path.join(args.results_path, 'Pred_{}.png'.format(i)))
+    
+cmd = 'cp -r {} /gdrive/MyDrive/model_results/{}_epoch_results/'.format(args.results_path, epoch)
