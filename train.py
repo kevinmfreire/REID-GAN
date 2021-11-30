@@ -40,10 +40,11 @@ parser.add_argument('--test_patient', type=str, default='L064')
 parser.add_argument('--save_iters', type=int, default=10)
 parser.add_argument('--print_iters', type=int, default=20)
 parser.add_argument('--decay_iters', type=int, default=6000)
+parser.add_argument('--gan_alt', type=int, default=5)
 
 parser.add_argument('--transform', type=bool, default=False)
 # if patch training, batch size is (--patch_n * --batch_size)
-parser.add_argument('--patch_n', type=int, default=10)		# default = 4
+parser.add_argument('--patch_n', type=int, default=8)		# default = 4
 parser.add_argument('--patch_size', type=int, default=128)	# default = 100
 parser.add_argument('--batch_size', type=int, default=10)	# default = 5
 parser.add_argument('--image_size', type=int, default=512)
@@ -135,10 +136,18 @@ Gloss = GLoss()
 Gloss = to_cuda(Gloss) if tpu_mode == False else Dloss.to(device)
 
 losses = []
+train_dis = True
 torch.autograd.set_detect_anomaly(True)
+
 start_time = time.time()
 for epoch in range(cur_epoch, args.num_epochs):
-	g_net.train()
+    	
+	# Alteranating training between discriminator and generator
+	if epoch + 1 % args.gan_alt == 0:
+		d_net.train(train_dis)
+		g_net.train(not train_dis)
+		train_dis = not train_dis
+
 	for i, (x, y) in enumerate(data_loader):
 		total_iters += 1
 		shape_ = x.shape[-1]
@@ -170,6 +179,7 @@ for epoch in range(cur_epoch, args.num_epochs):
 		Dy = d_net(y)
 		Dg = d_net(pred)
 		dloss = Dloss(Dy,Dg)
+		
 		dloss.backward(retain_graph=True)
 		# optimizer_discriminator.step()
 		opt_step(optimizer_discriminator)

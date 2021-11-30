@@ -79,7 +79,7 @@ class DLoss(torch.nn.Module):
         # self.weight = weight
 
     def forward(self, Dy, Dg):
-        return -torch.mean(torch.log(Dy) + torch.log1p(-Dg))
+        return -torch.mean(Dy) + torch.mean(Dg)
         # return - self.weight * torch.mean(neg)
 
 class GLoss(torch.nn.Module):
@@ -94,6 +94,6 @@ class GLoss(torch.nn.Module):
         self.SMOOTH_LOSS_FACTOR = SMOOTH_LOSS_FACTOR
 
     def forward(self, Dg, pred, y):
-        loss = self.ADVERSARIAL_LOSS_FACTOR * -torch.mean(torch.log(Dg)) + self.PIXEL_LOSS_FACTOR * MSEloss(y,pred) + \
+        loss = self.ADVERSARIAL_LOSS_FACTOR * -torch.mean(Dg) + self.PIXEL_LOSS_FACTOR * MSEloss(pred,y) + \
 			self.FEATURE_LOSS_FACTOR * get_feature_loss(y,pred) + self.SMOOTH_LOSS_FACTOR * get_smooth_loss(pred)
         return loss
