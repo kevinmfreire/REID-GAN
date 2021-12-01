@@ -151,9 +151,8 @@ with torch.no_grad():
         if args.result_fig:
             save_fig(x, y, pred, i, original_result, pred_result)
             pred=normalize_(pred.numpy())
-            # # print(pred)
             pred=torch.Tensor(pred)
-            # print(pred)
             utils.save_image(pred, os.path.join(args.results_path, 'Pred_{}.png'.format(i)))
     
 cmd = 'cp -r {} /gdrive/MyDrive/model_results/{}_epoch_results/'.format(args.results_path, epoch)
+os.system(cmd)
