@@ -36,12 +36,12 @@ parser.add_argument('--gan_alt', type=int, default=5)
 
 parser.add_argument('--transform', type=bool, default=False)
 # if patch training, batch size is (--patch_n * --batch_size)
-parser.add_argument('--patch_n', type=int, default=8)		# default = 4
-parser.add_argument('--patch_size', type=int, default=128)	# default = 100
-parser.add_argument('--batch_size', type=int, default=10)	# default = 5
+parser.add_argument('--patch_n', type=int, default=10)		# default = 4
+parser.add_argument('--patch_size', type=int, default=120)	# default = 100
+parser.add_argument('--batch_size', type=int, default=16)	# default = 5
 parser.add_argument('--image_size', type=int, default=512)
 
-parser.add_argument('--lr', type=float, default=2e-3) # Defailt = 1e-3
+parser.add_argument('--lr', type=float, default=1e-4) # Defailt = 1e-3
 
 parser.add_argument('--num_epochs', type=int, default=500)
 parser.add_argument('--num_workers', type=int, default=4)
