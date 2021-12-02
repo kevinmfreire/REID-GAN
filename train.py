@@ -123,10 +123,13 @@ for epoch in tq_epoch:
     	
 	# Alteranating training between discriminator and generator
 	if epoch + 1 % args.gan_alt == 0:
-		print('Training Discriminator' if train_dis else 'Training Generator')
+		print('Training Discriminator and Generator' if train_dis else 'Training Only Generator')
 		d_net.train(train_dis)
-		g_net.train(not train_dis)
 		train_dis = not train_dis
+	
+	# Training generator
+	g_net.train(True)
+	
 	data_tqdm = tqdm(data_loader, leave=False)
 	for i, (x, y) in enumerate(data_tqdm):
 		total_iters += 1
