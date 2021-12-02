@@ -115,7 +115,7 @@ train_dis = True
 torch.autograd.set_detect_anomaly(True)
 
 start_time = time.time()
-tq_epoch = tqdm(range(cur_epoch, args.num_epochs))
+tq_epoch = tqdm(range(cur_epoch, args.num_epochs),position=0, leave=True)
 for epoch in tq_epoch:
     	
 	# Initializing sum of losses for discriminator and generator
@@ -130,7 +130,7 @@ for epoch in tq_epoch:
 	# Training generator
 	g_net.train(True)
 	
-	data_tqdm = tqdm(data_loader, leave=False)
+	data_tqdm = tqdm(data_loader, position=0, leave=True)
 	for i, (x, y) in enumerate(data_tqdm):
 		total_iters += 1
 		count += 1
@@ -216,10 +216,10 @@ for epoch in tq_epoch:
 	avg_dloss = dloss_sum/float(count)
 	avg_gloss = gloss_sum/float(count)
 	
-	print("STEP [{}], EPOCH [{}/{}], ITER [{}/{}] \nAVG_G_LOSS: {:.8f}, AVG_D_LOSS: {:.14f}, TIME: {:.1f}s".format(total_iters, epoch, 
-																										args.num_epochs, i+1, 
-																										len(data_loader), avg_gloss, avg_dloss
-																										,time.time() - start_time))
+	# print("STEP [{}], EPOCH [{}/{}], ITER [{}/{}] \nAVG_G_LOSS: {:.8f}, AVG_D_LOSS: {:.14f}, TIME: {:.1f}s".format(total_iters, epoch, 
+	# 																									args.num_epochs, i+1, 
+	# 																									len(data_loader), avg_gloss, avg_dloss
+	# 																									,time.time() - start_time))
 	tq_epoch.set_postfix({'STEP': total_iters,'AVG_G_LOSS': avg_gloss, 'AVG_D_LOSS': avg_dloss})
 	# Saving model after every 10 epoch
 	if epoch % 10 == 0:
