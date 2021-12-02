@@ -25,7 +25,7 @@ def save_dataset(args):
                 np.save(os.path.join(args.save_path, f_name), f)
 
         printProgressBar(p_ind, len(patients_list),
-                         prefix="save image ..",
+                         prefix='save image ..',
                          suffix='Complete', length=25)
         print(' ')
 

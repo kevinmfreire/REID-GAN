@@ -86,9 +86,9 @@ class GNet(nn.Module):
 
         x4 = self.conv3(x)
 
-        x = x4.add(img)
+        x5 = x4.add(img)
 
-        x = x + 1.0
+        x = x5 + 1.0
 
         x = x/2.0
 

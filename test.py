@@ -28,8 +28,8 @@ parser.add_argument('--result_fig', type=bool, default=True)
 
 parser.add_argument('--norm_range_min', type=float, default=-1024.0)
 parser.add_argument('--norm_range_max', type=float, default=3072.0)
-parser.add_argument('--trunc_min', type=float, default=-160.0)
-parser.add_argument('--trunc_max', type=float, default=240.0)
+parser.add_argument('--trunc_min', type=float, default=-160.0)      # default=-160.0
+parser.add_argument('--trunc_max', type=float, default=240.0)       # default=240.0
 
 parser.add_argument('--transform', type=bool, default=False)
 # if patch training, batch size is (--patch_n * --batch_size)
@@ -98,7 +98,7 @@ cuda_is_present = True if torch.cuda.is_available() else False
 Tensor = torch.cuda.FloatTensor if cuda_is_present else torch.FloatTensor
 
 # load   
-whole_model = torch.load(args.save_path + 'latest_ckpt.pth.tar')
+whole_model = torch.load(args.save_path + 'latest_ckpt.pth.tar', map_location=torch.device('cpu'))
 netG_state_dict= whole_model['netG_state_dict']
 epoch = whole_model['epoch']
 netG = GNet(args.image_size)
@@ -153,6 +153,7 @@ with torch.no_grad():
             pred=normalize_(pred.numpy())
             pred=torch.Tensor(pred)
             utils.save_image(pred, os.path.join(args.results_path, 'Pred_{}.png'.format(i)))
-    
+
+quit()    
 cmd = 'cp -r {} /gdrive/MyDrive/model_results/{}_epoch_results/'.format(args.results_path, epoch)
 os.system(cmd)
