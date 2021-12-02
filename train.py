@@ -19,6 +19,8 @@ from torchvision.utils import save_image
 from loss import *
 from networks import *
 from loader import get_loader
+from tqdm import tqdm
+
 
 parser= argparse.ArgumentParser()
 
@@ -113,21 +115,20 @@ train_dis = True
 torch.autograd.set_detect_anomaly(True)
 
 start_time = time.time()
-for epoch in range(cur_epoch, args.num_epochs):
+tq_epoch = tqdm(range(cur_epoch, args.num_epochs))
+for epoch in tq_epoch:
     	
 	# Initializing sum of losses for discriminator and generator
 	gloss_sum, dloss_sum, count = 0, 0, 0
     	
 	# Alteranating training between discriminator and generator
-	if epoch % args.gan_alt == 0:
-		print('Training Discriminator and Generator' if train_dis else 'Training Only Generator')
+	if epoch + 1 % args.gan_alt == 0:
+		print('Training Discriminator' if train_dis else 'Training Generator')
 		d_net.train(train_dis)
+		g_net.train(not train_dis)
 		train_dis = not train_dis
-
-	# Always train Generator
-	g_net.train(True)
-
-	for i, (x, y) in enumerate(data_loader):
+	data_tqdm = tqdm(data_loader, leave=False)
+	for i, (x, y) in enumerate(data_tqdm):
 		total_iters += 1
 		count += 1
 		shape_ = x.shape[-1]
@@ -174,12 +175,12 @@ for epoch in range(cur_epoch, args.num_epochs):
 		
 
 		# Print progress after every 50 iterations
-		if total_iters % args.print_iters == 0:
-			print("STEP [{}], EPOCH [{}/{}], ITER [{}/{}] \nG_LOSS: {:.8f}, D_LOSS: {:.14f}, TIME: {:.1f}s".format(total_iters, epoch, 
-																										args.num_epochs, i+1, 
-																										len(data_loader), gloss.item(), dloss.item()
-																										,time.time() - start_time))
-
+		# if total_iters % args.print_iters == 0:
+		# 	print("STEP [{}], EPOCH [{}/{}], ITER [{}/{}] \nG_LOSS: {:.8f}, D_LOSS: {:.14f}, TIME: {:.1f}s".format(total_iters, epoch, 
+		# 																								args.num_epochs, i+1, 
+		# 																								len(data_loader), gloss.item(), dloss.item()
+		# 																								,time.time() - start_time))
+		data_tqdm.set_postfix({'ITER': i+1, 'G_LOSS': gloss.item(), 'D_LOSS': dloss.item()})
 		if total_iters % args.decay_iters == 0:
 			lr = lr * 0.5
 			for param_group in optimizer_generator.param_groups:
@@ -216,7 +217,7 @@ for epoch in range(cur_epoch, args.num_epochs):
 																										args.num_epochs, i+1, 
 																										len(data_loader), avg_gloss, avg_dloss
 																										,time.time() - start_time))
-
+	tq_epoch.set_postfix({'STEP': total_iters,'AVG_G_LOSS': avg_gloss, 'AVG_D_LOSS': avg_dloss})
 	# Saving model after every 10 epoch
 	if epoch % 10 == 0:
 		cmd1 = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/model/epoch_{}_ckpt.pth.tar'.format(args.save_path, epoch)
