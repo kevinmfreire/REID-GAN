@@ -120,10 +120,12 @@ for epoch in range(cur_epoch, args.num_epochs):
     	
 	# Alteranating training between discriminator and generator
 	if epoch % args.gan_alt == 0:
-		print('Training Discriminator' if train_dis else 'Training Generator')
+		print('Training Discriminator and Generator' if train_dis else 'Training Only Generator')
 		d_net.train(train_dis)
-		g_net.train(not train_dis)
 		train_dis = not train_dis
+
+	# Always train Generator
+	g_net.train(True)
 
 	for i, (x, y) in enumerate(data_loader):
 		total_iters += 1
