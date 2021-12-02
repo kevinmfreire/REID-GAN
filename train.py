@@ -47,7 +47,7 @@ parser.add_argument('--lr', type=float, default=1e-4) # Defailt = 1e-3
 
 parser.add_argument('--num_epochs', type=int, default=500)
 parser.add_argument('--num_workers', type=int, default=4)
-parser.add_argument('--load_chkpt', type=bool, default=False)
+parser.add_argument('--load_chkpt', type=bool, default=True)
 
 
 args = parser.parse_args()
@@ -115,7 +115,7 @@ train_dis = True
 torch.autograd.set_detect_anomaly(True)
 
 start_time = time.time()
-tq_epoch = tqdm(range(cur_epoch, args.num_epochs),position=0, leave=True)
+tq_epoch = tqdm(range(cur_epoch, args.num_epochs),position=1, leave=True, desc='Epochs')
 for epoch in tq_epoch:
     	
 	# Initializing sum of losses for discriminator and generator
@@ -130,7 +130,7 @@ for epoch in tq_epoch:
 	# Training generator
 	g_net.train(True)
 	
-	data_tqdm = tqdm(data_loader, position=0, leave=True)
+	data_tqdm = tqdm(data_loader, position=0, leave=True, desc='Iters')
 	for i, (x, y) in enumerate(data_tqdm):
 		total_iters += 1
 		count += 1
