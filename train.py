@@ -119,7 +119,7 @@ for epoch in range(cur_epoch, args.num_epochs):
 	gloss_sum, dloss_sum, count = 0, 0, 0
     	
 	# Alteranating training between discriminator and generator
-	if epoch + 1 % args.gan_alt == 0:
+	if epoch % args.gan_alt == 0:
 		print('Training Discriminator' if train_dis else 'Training Generator')
 		d_net.train(train_dis)
 		g_net.train(not train_dis)
