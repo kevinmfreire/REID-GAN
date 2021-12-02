@@ -122,7 +122,7 @@ for epoch in tq_epoch:
 	gloss_sum, dloss_sum, count = 0, 0, 0
     	
 	# Alteranating training between discriminator and generator
-	if epoch + 1 % args.gan_alt == 0:
+	if epoch % args.gan_alt == 0:
 		print('Training Discriminator and Generator' if train_dis else 'Training Only Generator')
 		d_net.train(train_dis)
 		train_dis = not train_dis
