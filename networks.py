@@ -58,7 +58,7 @@ class GNet(nn.Module):
     
     def forward(self, input):
 
-        img = self.norm(input)
+        # img = self.norm(input)
 
         x1 = self.conv1(input)
         
@@ -86,7 +86,7 @@ class GNet(nn.Module):
 
         x4 = self.conv3(x)
 
-        x5 = x4.add(img)
+        x5 = x4.add(input)
 
         x = x5 + 1.0
 
