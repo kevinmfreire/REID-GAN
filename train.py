@@ -121,8 +121,8 @@ for epoch in tq_epoch:
 
 	# Initializing sum of losses for discriminator and generator
 	gloss_sum, dloss_sum, count = 0, 0, 0
+	
 	# Alteranating training between discriminator and generator
-
 	train_gen = gen_count >= args.gan_alt
 	if not train_gen:
 		print(f"Training Discriminator {gen_count+1}")
