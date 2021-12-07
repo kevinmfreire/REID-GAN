@@ -24,8 +24,8 @@ def create_window(window_size, channel):
     return  window # window.cuda()
 
 def get_pixel_loss(target, prediction):
-    pixel_difference = target - prediction
-    pixel_loss = torch.sum(torch.pow(pixel_difference, 2)) / 2.0
+    loss = nn.MSELoss()
+    pixel_loss = loss(prediction, target)
     return pixel_loss
 
 # OBTAIN THE SECOND CONV2_2 LAYERS FOR FEATURE EXTRACTION
@@ -46,11 +46,13 @@ def get_feature_layer_vgg16(image):
 def get_feature_loss(target,prediction):
     feature_transformed_target = get_feature_layer_vgg16(target)
     feature_transformed_prediction = get_feature_layer_vgg16(prediction)
-    feature_count = feature_transformed_target.shape[-1]
-    feature_difference = feature_transformed_target-feature_transformed_prediction
-    feature_loss = torch.sum(torch.pow(feature_difference,2))
-    # feature_loss = torch.sum(torch.square(feature_transformed_target-feature_transformed_prediction))
-    feature_loss = feature_loss/float(feature_count)
+    # feature_count = feature_transformed_target.shape[-1]
+    # feature_difference = feature_transformed_target-feature_transformed_prediction
+    # feature_loss = torch.sum(torch.pow(feature_difference,2))
+    # # feature_loss = torch.sum(torch.square(feature_transformed_target-feature_transformed_prediction))
+    # feature_loss = feature_loss/float(feature_count)
+    loss = nn.MSELoss()
+    feature_loss = loss(feature_transformed_prediction, feature_transformed_target)
     return feature_loss
 
 def get_smooth_loss(image):
@@ -84,6 +86,6 @@ class GLoss(torch.nn.Module):
 
     def forward(self, Dg, pred, y):
         ADVERSARIAL_LOSS_FACTOR, PIXEL_LOSS_FACTOR, FEATURE_LOSS_FACTOR, SMOOTH_LOSS_FACTOR = 0.5, 1.0, 1.0, 0.0001
-        loss = ADVERSARIAL_LOSS_FACTOR * -torch.mean(Dg) + PIXEL_LOSS_FACTOR * torch.log(get_pixel_loss(y,pred)) + \
-			FEATURE_LOSS_FACTOR * torch.log(get_feature_loss(y,pred)) + SMOOTH_LOSS_FACTOR * torch.log(get_smooth_loss(pred))
+        loss = ADVERSARIAL_LOSS_FACTOR * -torch.mean(Dg) + PIXEL_LOSS_FACTOR * get_pixel_loss(y,pred) + \
+			FEATURE_LOSS_FACTOR * get_feature_loss(y,pred) + SMOOTH_LOSS_FACTOR * get_smooth_loss(pred)
         return loss

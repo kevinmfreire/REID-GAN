@@ -47,7 +47,7 @@ parser.add_argument('--lr', type=float, default=1e-4) # Defailt = 1e-3
 
 parser.add_argument('--num_epochs', type=int, default=500)
 parser.add_argument('--num_workers', type=int, default=4)
-parser.add_argument('--load_chkpt', type=bool, default=True)
+parser.add_argument('--load_chkpt', type=bool, default=False)
 
 
 args = parser.parse_args()
@@ -122,10 +122,10 @@ for epoch in tq_epoch:
 	gloss_sum, dloss_sum, count = 0, 0, 0
     	
 	# Alteranating training between discriminator and generator
-	if epoch % args.gan_alt == 0:
-		print('Training Discriminator and Generator' if train_dis else 'Training Only Generator')
-		d_net.train(train_dis)
-		train_dis = not train_dis
+	# if epoch % args.gan_alt == 0:
+	# 	print('Training Discriminator and Generator' if train_dis else 'Training Only Generator')
+	# 	d_net.train(train_dis)
+	# 	train_dis = not train_dis
 	
 	# Training generator
 	g_net.train(True)
@@ -172,7 +172,7 @@ for epoch in tq_epoch:
 		gloss = Gloss(Dg, pred, y)
 		gloss.backward()
 		optimizer_generator.step()
-
+		print(gloss)
 		dloss_sum += dloss.item()
 		gloss_sum += gloss.item()
 		
