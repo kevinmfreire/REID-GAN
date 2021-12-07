@@ -34,7 +34,7 @@ parser.add_argument('--test_patient', type=str, default='L064')
 parser.add_argument('--save_iters', type=int, default=10)
 parser.add_argument('--print_iters', type=int, default=50)
 parser.add_argument('--decay_iters', type=int, default=6000)
-parser.add_argument('--gan_alt', type=int, default=5)
+parser.add_argument('--gan_alt', type=int, default=2)
 
 parser.add_argument('--transform', type=bool, default=False)
 # if patch training, batch size is (--patch_n * --batch_size)
@@ -113,23 +113,27 @@ Gloss = to_cuda(Gloss)
 losses = []
 train_dis = True
 torch.autograd.set_detect_anomaly(True)
-
+gen_count = 0
 start_time = time.time()
 tq_epoch = tqdm(range(cur_epoch, args.num_epochs),position=1, leave=True, desc='Epochs')
+print("Training Discriminator")
 for epoch in tq_epoch:
-    	
+
 	# Initializing sum of losses for discriminator and generator
 	gloss_sum, dloss_sum, count = 0, 0, 0
-    	
 	# Alteranating training between discriminator and generator
-	# if epoch % args.gan_alt == 0:
-	# 	print('Training Discriminator and Generator' if train_dis else 'Training Only Generator')
-	# 	d_net.train(train_dis)
-	# 	train_dis = not train_dis
-	
-	# Training generator
-	g_net.train(True)
-	
+
+	train_gen = gen_count >= args.gan_alt
+	if not train_gen:
+		print(f"Training Discriminator {gen_count+1}")
+	else:
+		print(f"Training Generator  {gen_count - 1}")
+	g_net.train(train_gen)
+	d_net.train(not train_gen)
+	gen_count += 1
+	if gen_count == args.gan_alt*5 + args.gan_alt:
+		gen_count = 0
+
 	data_tqdm = tqdm(data_loader, position=0, leave=True, desc='Iters')
 	for i, (x, y) in enumerate(data_tqdm):
 		total_iters += 1
@@ -172,7 +176,6 @@ for epoch in tq_epoch:
 		gloss = Gloss(Dg, pred, y)
 		gloss.backward()
 		optimizer_generator.step()
-		print(gloss)
 		dloss_sum += dloss.item()
 		gloss_sum += gloss.item()
 		
