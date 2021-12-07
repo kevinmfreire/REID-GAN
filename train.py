@@ -186,7 +186,7 @@ for epoch in tq_epoch:
 		# 																								args.num_epochs, i+1, 
 		# 																								len(data_loader), gloss.item(), dloss.item()
 		# 																								,time.time() - start_time))
-		data_tqdm.set_postfix({'ITER': i+1, 'G_LOSS': gloss.item(), 'D_LOSS': dloss.item()})
+		data_tqdm.set_postfix({'ITER': i+1, 'G_LOSS': '{:.5f}'.format(gloss.item()), 'D_LOSS': '{:.8f}'.format(dloss.item())})
 		if total_iters % args.decay_iters == 0:
 			lr = lr * 0.5
 			for param_group in optimizer_generator.param_groups:
@@ -223,7 +223,7 @@ for epoch in tq_epoch:
 	# 																									args.num_epochs, i+1, 
 	# 																									len(data_loader), avg_gloss, avg_dloss
 	# 																									,time.time() - start_time))
-	tq_epoch.set_postfix({'STEP': total_iters,'AVG_G_LOSS': avg_gloss, 'AVG_D_LOSS': avg_dloss})
+	tq_epoch.set_postfix({'STEP': total_iters,'AVG_G_LOSS': '{:.5f}'.format(avg_gloss), 'AVG_D_LOSS': '{:.8f}'.format(avg_dloss)})
 	# Saving model after every 10 epoch
 	if epoch % 10 == 0:
 		cmd1 = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/model/epoch_{}_ckpt.pth.tar'.format(args.save_path, epoch)
