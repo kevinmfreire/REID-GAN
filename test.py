@@ -125,10 +125,10 @@ with torch.no_grad():
         # Reshaping pred for computing measurements
         x = x.view(shape_, shape_).cpu().detach()
         y = y.view(shape_, shape_).cpu().detach()
-        # pred = pred.view(shape_, shape_).cpu().detach()
+        pred = pred.view(shape_, shape_).cpu().detach()
         # x = trunc(denormalize_(x.view(shape_, shape_).cpu().detach()))
         # y = trunc(denormalize_(y.view(shape_, shape_).cpu().detach()))
-        pred = trunc(denormalize_(pred.view(shape_, shape_).cpu().detach()))
+        # pred = trunc(denormalize_(pred.view(shape_, shape_).cpu().detach()))
 
         # Computing Measures
         data_range = args.trunc_max - args.trunc_min
