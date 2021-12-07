@@ -56,13 +56,13 @@ def get_feature_loss(target,prediction):
     return feature_loss
 
 def get_smooth_loss(image):
-    _, _ , image_height, image_width = image.size()
+    batch, _ , image_height, image_width = image.size()
     horizontal_normal = image[:, :, :, 0:image_width-1]
     horizontal_one_right = image[:, :, :, 1:image_width]
     vertical_normal = image[:, :, 0:image_height-1, :]
     vertical_one_right = image[:, :, 1:image_height, :]
     # smooth_loss = torch.sum(torch.pow(horizontal_normal-horizontal_one_right, 2)) / 2.0 + torch.sum(torch.pow(vertical_normal - vertical_one_right, 2)) / 2.0
-    smooth_loss = get_pixel_loss(horizontal_normal, horizontal_one_right) + get_pixel_loss(vertical_normal, vertical_one_right)
+    smooth_loss = get_pixel_loss(horizontal_normal, horizontal_one_right) + get_pixel_loss(vertical_normal, vertical_one_right) 
     return smooth_loss
 
 class DLoss(torch.nn.Module):
@@ -85,7 +85,7 @@ class GLoss(torch.nn.Module):
         super(GLoss, self).__init__()
 
     def forward(self, Dg, pred, y):
-        ADVERSARIAL_LOSS_FACTOR, PIXEL_LOSS_FACTOR, FEATURE_LOSS_FACTOR, SMOOTH_LOSS_FACTOR = 0.5, 1.0, 1.0, 0.0001
-        loss = ADVERSARIAL_LOSS_FACTOR * -torch.mean(Dg) + PIXEL_LOSS_FACTOR * get_pixel_loss(y,pred) + \
-			FEATURE_LOSS_FACTOR * get_feature_loss(y,pred) + SMOOTH_LOSS_FACTOR * get_smooth_loss(pred)
+        ADVERSARIAL_LOSS_FACTOR, PIXEL_LOSS_FACTOR, FEATURE_LOSS_FACTOR, SMOOTH_LOSS_FACTOR = 1.0, 1.0, 1.0, 1.0
+        loss = ADVERSARIAL_LOSS_FACTOR * -torch.mean(Dg) + PIXEL_LOSS_FACTOR * torch.log(get_pixel_loss(y,pred)) + \
+			FEATURE_LOSS_FACTOR * torch.log(get_feature_loss(y,pred)) + SMOOTH_LOSS_FACTOR * torch.log(get_smooth_loss(pred))
         return loss
