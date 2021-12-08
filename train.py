@@ -28,7 +28,7 @@ parser.add_argument('--mode', type=str, default='train')
 parser.add_argument('--load_mode', type=int, default=1)
 parser.add_argument('--data_path', type=str, default='./patient')
 parser.add_argument('--saved_path', type=str, default='./patient/data/npy_img/')
-parser.add_argument('--save_path', type=str, default='./model/')
+parser.add_argument('--save_path', type=str, default='./normalized_model/')
 parser.add_argument('--test_patient', type=str, default='L064')
 
 parser.add_argument('--save_iters', type=int, default=10)
@@ -226,8 +226,8 @@ for epoch in tq_epoch:
 	tq_epoch.set_postfix({'STEP': total_iters,'AVG_G_LOSS': '{:.5f}'.format(avg_gloss), 'AVG_D_LOSS': '{:.8f}'.format(avg_dloss)})
 	# Saving model after every 10 epoch
 	if epoch % 10 == 0:
-		cmd1 = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/model/epoch_{}_ckpt.pth.tar'.format(args.save_path, epoch)
-		cmd2 = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/model/'.format(args.save_path)
+		cmd1 = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/normalized_model/epoch_{}_ckpt.pth.tar'.format(args.save_path, epoch)
+		cmd2 = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/normalized_model/'.format(args.save_path)
 		os.system(cmd1)
 		os.system(cmd2)
 	losses.append((gloss.item(), dloss.item()))
