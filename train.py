@@ -212,7 +212,7 @@ for epoch in tq_epoch:
 			# torch.save(saved_model, '{}iter_{}_ckpt.pth.tar'.format(args.save_path, total_iters))
 			torch.save(saved_model, '{}latest_ckpt.pth.tar'.format(args.save_path))
 			# save_model(saved_model, '{}latest_ckpt.pth.tar'.format(args.save_path))
-			cmd = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/model/'.format(args.save_path)
+			cmd = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/normalized_model/'.format(args.save_path)
 			os.system(cmd)
 	
 	# Calculating average loss
