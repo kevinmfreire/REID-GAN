@@ -60,13 +60,13 @@ class GNet(nn.Module):
 
         # img = self.norm(input)
 
-        x1 = self.conv1(input)
+        conv1 = self.conv1(input)
         
-        pool1 = self.pool(x1)
+        pool1 = self.pool(conv1)
         
-        x2 = self.conv2(pool1)
+        conv2 = self.conv2(pool1)
 
-        pool2 = self.pool(x2)
+        pool2 = self.pool(conv2)
 
         res1 = self.residual(pool2)
 
@@ -80,15 +80,15 @@ class GNet(nn.Module):
 
         x = res3.add(x)
 
-        x3 = self.deconv(x)
+        deconv1 = self.deconv(x)
 
-        x = x3.add(x1)
+        x = deconv1.add(conv1)
 
-        x4 = self.conv3(x)
+        conv3 = self.conv3(x)
 
-        x5 = x4.add(input)
+        output = conv3.add(input)
 
-        x = x5 + 1.0
+        x = output + 1.0
 
         x = x/2.0
 
