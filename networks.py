@@ -88,11 +88,11 @@ class GNet(nn.Module):
 
         output = conv3.add(input)
 
-        x = output + 1.0
+        # output = output + 1.0
 
-        x = x/2.0
+        # output = output / 2.0
 
-        return x
+        return output
 
 class DNet(nn.Module):
     def __init__(self):

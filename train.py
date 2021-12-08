@@ -44,11 +44,12 @@ parser.add_argument('--batch_size', type=int, default=16)	# default = 5
 parser.add_argument('--image_size', type=int, default=512)
 
 parser.add_argument('--lr', type=float, default=1e-4) # Defailt = 1e-3
-
 parser.add_argument('--num_epochs', type=int, default=500)
 parser.add_argument('--num_workers', type=int, default=4)
 parser.add_argument('--load_chkpt', type=bool, default=False)
 
+parser.add_argument('--norm_range_min', type=float, default=-1024.0)
+parser.add_argument('--norm_range_max', type=float, default=3071.0)
 
 args = parser.parse_args()
 
@@ -68,6 +69,14 @@ Tensor = torch.cuda.FloatTensor if cuda_is_present else torch.FloatTensor
 
 def to_cuda(data):
     	return data.cuda() if cuda_is_present else data
+
+def denormalize_(image):
+    image = image * (args.norm_range_max - args.norm_range_min) + args.norm_range_min
+    return image
+
+def normalize_(image):
+    image = (image - args.norm_range_min) / (args.norm_range_max - args.norm_range_min)
+    return image
 
 image_size = args.image_size if args.patch_size == None else args.patch_size
 
@@ -154,11 +163,13 @@ for epoch in tq_epoch:
 			x = x.view(-1, 1, shape_, shape_)
 			y = y.view(-1, 1, shape_, shape_)
 
-		x = to_cuda(x)
 		y = to_cuda(y)
+		x = to_cuda(x)
+		x = normalize_(x)
 
 		# Predictions
 		pred = g_net(x)
+		pred = denormalize_(pred)
 
 		# Training discriminator
 		optimizer_discriminator.zero_grad()
