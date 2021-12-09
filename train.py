@@ -49,7 +49,7 @@ parser.add_argument('--num_workers', type=int, default=4)
 parser.add_argument('--load_chkpt', type=bool, default=False)
 
 parser.add_argument('--norm_range_min', type=float, default=-1024.0)
-parser.add_argument('--norm_range_max', type=float, default=3071.0)
+parser.add_argument('--norm_range_max', type=float, default=3072.0)
 
 args = parser.parse_args()
 
