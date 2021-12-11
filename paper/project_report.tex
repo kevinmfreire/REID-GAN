@@ -1,0 +1,79 @@
+\documentclass[journal]{IEEEtran}
+\usepackage{epsf,cite,amsmath,amscd,graphics,graphicx,latexsym,multicol,setspace}
+\usepackage{amsfonts,amsmath,amssymb,amsthm}
+\usepackage{scalefnt}
+\newcounter{MYtempeqncnt}
+\begin{document}
+\title{Low-Dose CT Image denoising and Restoration using General Adversarial Networks}
+
+\author{Kevin Freire\\
+kfreirea@ryerson.ca\\
+Department of Electrical and Computer Engineering\\
+Ryerson University, Toronto, Canada.}
+\maketitle
+
+
+% ABSTRACT
+\begin{abstract}
+
+
+
+\end{abstract}
+
+% KEYWORDS
+\begin{IEEEkeywords}
+Image restoration, Image Denoising, General Adversarial Networks, GANs, Low-Dose CT, Medical Imagery, Deep Neural Networks.
+\end{IEEEkeywords}
+
+% INTRODUCTION
+\section{Introduction}
+\label{Introduction}
+Computerize Tomography (CT) has enabled direct imaging on the 3-dimensional structure of different organs and tissues inside the human body in a non-invasive manner. CT scans are constructed by combining the X-ray scans taken on several angles and orientations.  It has several utilities but very useful in detecting lesions, tensions, tumours, and metastasis.  It can reveal their presence and the spatial location, size and extent of the tumour.  CT imaging has become a frequent tool for cancer diagnosis, angiography, and detecting internal injuries.  However, despite the evidence of its utility for diagnosis and patient management, the potential risk of radiation-induced malignancy exists \cite{brenner2007computed}.  Studies found that CT alone contributes to almost half of the total radiation exposure from medical use alone.  Recent studies reveal that as much as 1.2 - 2\% of cancers may eventually be caused by the radiation dose conceived by the patient while undergoing CT scans \cite{schauer2009national}.  To reduce the risk, the principles of ALARA (As Low As Reasonably Achievable) is now a profound practice predicted in CT imaging \cite{protection2007icrp}.  In regards to this practice, Low Dose CT (LDCT) is a promising solution in reducing radiation exposure \cite{trattner2014standardization}.  In low dose CT, radiation exposure is decreased by lowering the tube current, or voltage.  However, by reducing the tube voltage or current it introduces several artefacts and lowers the diagnostic quality of the LDCT image \cite{boas2012ct}.  In order to boost the quality of an LDCT image, the reconstruction of LDCT has become a primary research.  There are various methods that can be classified under three categories: (a) iterative reconstruction, (b) sinogram filtration based techniques, and (c) image post-processing based technique.  In recent times, researchers were trying to develop new iterative algorithms (IR) for LDCT image reconstruction.  Iterative reconstruction algorithms considerably suppresses the image noise, but still lose some details and suffer from remaining artefacts.  Other disadvantages with IR techniques is the high computational cost, which is a bottle neck in practical utilization.  Sinogram filtration on the other hand, directly works on the projection data before reconstructing the image and is more computationally economical than the IR technique.  However, the data of commercial scanners are not readily available to users, and this method suffers from edge blurring and the resolution loss.  Many efforts were made in the image domain to reduce LDCT noise and suppress artefacts.\\
+With the explosive evolution of deep neural networks, the LDCT denoising task is now dominated by deep neural networks.  Bera \emph{et al}. \cite{9474492} proposed 
+
+% RELATED WORK
+\section{Related Work}
+\label{related Work}
+
+% METHOD
+\section{Method}
+\label{Method}
+
+
+
+% GENERATOR NETWORK
+\subsection{Generator Network}
+\label{generator}
+
+
+% DISCRIMINATOR NETWORK
+\subsection{Discriminator Network}
+\label{discriminator}
+
+
+% LOSS FUNCTION
+\subsection{Refined Loss Function}
+\label{loss function}
+
+
+% EXPERIMENT SETTINGS
+% this section includes dataset and training details
+\section{Experiment Settings}
+\label{experiment settings}
+
+% RESULTS AND DISCUSSIONS
+\section{Results and Discussion}
+\label{results and discussion}
+
+% COMPUTATIONAL COMPLEXITY
+\section{Computational Complexity}
+\label{complexity}
+
+% CONCLUSION
+\section{Conclusion}
+\label{Conclusion}
+
+% REFERENCES
+\bibliography{project_reference}
+\bibliographystyle{ieeetr}
+\end{document}
