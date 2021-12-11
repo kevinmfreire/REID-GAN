@@ -12,81 +12,94 @@ class GNet(nn.Module):
         cnum = 32
         size = image_size//2
         self.conv1 = nn.Sequential(
-            nn.Conv2d(1, cnum, 9, 1, padding=4),
+            nn.Conv2d(1, cnum, 4, 1),
             nn.BatchNorm2d(cnum),
-            nn.LeakyReLU(0.2, inplace=True)
-        )
-        self.conv2 = nn.Sequential(
-            nn.Conv2d(cnum, 2*cnum, 3, 1, padding=1),
-            nn.BatchNorm2d(2*cnum),
-            nn.LeakyReLU(0.2, inplace=True),
-            nn.Conv2d(2*cnum, 4*cnum, 3, 1, padding=1),
-            nn.BatchNorm2d(4*cnum),
-            nn.LeakyReLU(0.2, inplace=True)
+            nn.ReLU(inplace=True)
         )
 
-        self.residual = nn.Sequential(
-            nn.Conv2d(4*cnum, 4*cnum, 3, 1,padding=1),
-            nn.BatchNorm2d(4*cnum),
-            nn.LeakyReLU(0.2, inplace=True),
-            nn.Conv2d(4*cnum, 4*cnum, 3, 1,padding=1),
-            nn.BatchNorm2d(4*cnum),
-            nn.LeakyReLU(0.2, inplace=True)
-        )
-
-        self.deconv = nn.Sequential(
-            nn.Upsample(size, mode='nearest'),
-            nn.Conv2d(4*cnum, 2*cnum, 3, 1),
-            nn.BatchNorm2d(2*cnum),
-            nn.LeakyReLU(0.2, inplace=True),
-            nn.Upsample(2*size, mode='nearest'),
-            nn.Conv2d(2*cnum, cnum, 3, 1,padding=1),
-            nn.BatchNorm2d(cnum),
-            nn.LeakyReLU(0.2, inplace=True)
-        )
-
-        self.conv3 = nn.Sequential(
-            nn.Conv2d(cnum, 1, 9, 1, padding=4),
-            nn.BatchNorm2d(self.input_channel),
+        self.deconv1 = nn.Sequential(
+            nn.ConvTranspose2d(cnum, 1, 4, 1),
+            nn.BatchNorm2d(1),
             nn.Tanh()
         )
+        # self.conv2 = nn.Sequential(
+        #     nn.Conv2d(cnum, 2*cnum, 3, 1, padding=1),
+        #     nn.BatchNorm2d(2*cnum),
+        #     nn.LeakyReLU(0.2, inplace=True),
+        #     nn.Conv2d(2*cnum, 4*cnum, 3, 1, padding=1),
+        #     nn.BatchNorm2d(4*cnum),
+        #     nn.LeakyReLU(0.2, inplace=True)
+        # )
 
-        self.norm = nn.BatchNorm2d(self.input_channel)
+        # self.residual = nn.Sequential(
+        #     nn.Conv2d(4*cnum, 4*cnum, 3, 1,padding=1),
+        #     nn.BatchNorm2d(4*cnum),
+        #     nn.LeakyReLU(0.2, inplace=True),
+        #     nn.Conv2d(4*cnum, 4*cnum, 3, 1,padding=1),
+        #     nn.BatchNorm2d(4*cnum),
+        #     nn.LeakyReLU(0.2, inplace=True)
+        # )
 
-        self.pool = nn.MaxPool2d(kernel_size=(2,2))
+        # self.deconv = nn.Sequential(
+        #     nn.Upsample(size, mode='nearest'),
+        #     nn.Conv2d(4*cnum, 2*cnum, 3, 1),
+        #     nn.BatchNorm2d(2*cnum),
+        #     nn.LeakyReLU(0.2, inplace=True),
+        #     nn.Upsample(2*size, mode='nearest'),
+        #     nn.Conv2d(2*cnum, cnum, 3, 1,padding=1),
+        #     nn.BatchNorm2d(cnum),
+        #     nn.LeakyReLU(0.2, inplace=True)
+        # )
+
+        # self.conv3 = nn.Sequential(
+        #     nn.Conv2d(cnum, 1, 9, 1, padding=4),
+        #     nn.BatchNorm2d(self.input_channel),
+        #     nn.Tanh()
+        # )
+
+        # self.norm = nn.BatchNorm2d(self.input_channel)
+
+        # self.pool = nn.MaxPool2d(kernel_size=(2,2))
 
     
     def forward(self, input):
 
         # img = self.norm(input)
+        print(input.size())
 
         conv1 = self.conv1(input)
+
+        print(conv1.size())
+
+        output = self.deconv1(conv1)
+
+        print(output.size())
         
-        pool1 = self.pool(conv1)
+        # pool1 = self.pool(conv1)
         
-        conv2 = self.conv2(pool1)
+        # conv2 = self.conv2(pool1)
 
-        pool2 = self.pool(conv2)
+        # pool2 = self.pool(conv2)
 
-        res1 = self.residual(pool2)
+        # res1 = self.residual(pool2)
 
-        x = res1.add(pool2)
+        # x = res1.add(pool2)
 
-        res2 = self.residual(x)
+        # res2 = self.residual(x)
 
-        x = res2.add(x)
+        # x = res2.add(x)
 
-        res3 = self.residual(x)
+        # res3 = self.residual(x)
 
-        x = res3.add(x)
+        # x = res3.add(x)
 
-        deconv1 = self.deconv(x)
+        # deconv1 = self.deconv(x)
 
-        x = deconv1.add(conv1)
+        # x = deconv1.add(conv1)
 
-        conv3 = self.conv3(x)
+        # conv3 = self.conv3(x)
 
-        output = conv3.add(input)
+        # output = conv3.add(input)
 
         return output
 

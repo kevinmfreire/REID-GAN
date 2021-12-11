@@ -165,11 +165,13 @@ for epoch in tq_epoch:
 
 		y = to_cuda(y)
 		x = to_cuda(x)
-		x = normalize_(x)
+		# x = normalize_(x)
 
 		# Predictions
 		pred = g_net(x)
-		pred = denormalize_(pred)
+		# pred = denormalize_(pred)
+		print(pred.size)
+		quit()
 
 		# Training discriminator
 		optimizer_discriminator.zero_grad()
