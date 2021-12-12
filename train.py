@@ -40,7 +40,7 @@ parser.add_argument('--transform', type=bool, default=False)
 # if patch training, batch size is (--patch_n * --batch_size)
 parser.add_argument('--patch_n', type=int, default=10)		# default = 4
 parser.add_argument('--patch_size', type=int, default=120)	# default = 100
-parser.add_argument('--batch_size', type=int, default=16)	# default = 5
+parser.add_argument('--batch_size', type=int, default=10)	# default = 5
 parser.add_argument('--image_size', type=int, default=512)
 
 parser.add_argument('--lr', type=float, default=1e-4) # Defailt = 1e-3
@@ -105,7 +105,7 @@ else:
 	print('Training model from scrath')
 	g_net = GNet(image_size)
 	g_net = to_cuda(g_net)
-	d_net = DNet()
+	d_net = DNet(image_size, args.batch_size, args.patch_n)
 	d_net = to_cuda(d_net)
 	optimizer_generator = torch.optim.Adam(g_net.parameters(), lr=args.lr)
 	optimizer_discriminator = torch.optim.Adam(d_net.parameters(), lr=4*args.lr)
@@ -168,15 +168,16 @@ for epoch in tq_epoch:
 		# x = normalize_(x)
 
 		# Predictions
-		pred = g_net(x)
+		# pred = g_net(x)
 		# pred = denormalize_(pred)
-		print(pred.size)
-		quit()
 
 		# Training discriminator
 		optimizer_discriminator.zero_grad()
 		d_net.zero_grad()
 		Dy = d_net(y)
+		print(Dy)
+
+		quit()
 		Dg = d_net(pred)
 		dloss = Dloss(Dy,Dg)
 		

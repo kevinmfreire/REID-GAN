@@ -8,124 +8,115 @@ import numpy as np
 class GNet(nn.Module):
     def __init__(self, image_size):
         super(GNet, self).__init__()
-        self.input_channel=1
-        cnum = 32
-        size = image_size//2
-        self.conv1 = nn.Sequential(
-            nn.Conv2d(1, cnum, 4, 1),
-            nn.BatchNorm2d(cnum),
-            nn.ReLU(inplace=True)
-        )
+        self.input_channel = 1
+        self.inter_channel = 64
 
-        self.deconv1 = nn.Sequential(
-            nn.ConvTranspose2d(cnum, 1, 4, 1),
-            nn.BatchNorm2d(1),
-            nn.Tanh()
-        )
-        # self.conv2 = nn.Sequential(
-        #     nn.Conv2d(cnum, 2*cnum, 3, 1, padding=1),
-        #     nn.BatchNorm2d(2*cnum),
-        #     nn.LeakyReLU(0.2, inplace=True),
-        #     nn.Conv2d(2*cnum, 4*cnum, 3, 1, padding=1),
-        #     nn.BatchNorm2d(4*cnum),
-        #     nn.LeakyReLU(0.2, inplace=True)
-        # )
-
-        # self.residual = nn.Sequential(
-        #     nn.Conv2d(4*cnum, 4*cnum, 3, 1,padding=1),
-        #     nn.BatchNorm2d(4*cnum),
-        #     nn.LeakyReLU(0.2, inplace=True),
-        #     nn.Conv2d(4*cnum, 4*cnum, 3, 1,padding=1),
-        #     nn.BatchNorm2d(4*cnum),
-        #     nn.LeakyReLU(0.2, inplace=True)
-        # )
-
-        # self.deconv = nn.Sequential(
-        #     nn.Upsample(size, mode='nearest'),
-        #     nn.Conv2d(4*cnum, 2*cnum, 3, 1),
-        #     nn.BatchNorm2d(2*cnum),
-        #     nn.LeakyReLU(0.2, inplace=True),
-        #     nn.Upsample(2*size, mode='nearest'),
-        #     nn.Conv2d(2*cnum, cnum, 3, 1,padding=1),
-        #     nn.BatchNorm2d(cnum),
-        #     nn.LeakyReLU(0.2, inplace=True)
-        # )
-
-        # self.conv3 = nn.Sequential(
-        #     nn.Conv2d(cnum, 1, 9, 1, padding=4),
-        #     nn.BatchNorm2d(self.input_channel),
-        #     nn.Tanh()
-        # )
-
-        # self.norm = nn.BatchNorm2d(self.input_channel)
-
-        # self.pool = nn.MaxPool2d(kernel_size=(2,2))
-
+        self.conv1 = nn.Sequential(nn.Conv2d(self.input_channel, self.inter_channel, 5, 1, padding=2),
+                                    nn.ReLU(inplace=True))
+        self.layer1 = nn.Sequential(nn.Conv2d(self.inter_channel, self.inter_channel*2, 4, 2, padding=1),
+                                    nn.BatchNorm2d(self.inter_channel*2),
+                                    nn.ReLU(inplace=True))
+        self.layer2 = nn.Sequential(nn.Conv2d(self.inter_channel*2, self.inter_channel*4, 4, 2, padding=1),
+                                    nn.BatchNorm2d(self.inter_channel*4),
+                                    nn.ReLU(inplace=True))
+        self.residual = nn.Sequential(nn.Conv2d(4*self.inter_channel, 4*self.inter_channel, 3, 1,padding=1),
+                                    nn.BatchNorm2d(4*self.inter_channel),
+                                    nn.ReLU(inplace=True),
+                                    nn.Conv2d(4*self.inter_channel, 4*self.inter_channel, 3, 1,padding=1),
+                                    nn.BatchNorm2d(4*self.inter_channel))
+        self.deconv1 = nn.Sequential(nn.ConvTranspose2d(self.inter_channel*4, self.inter_channel*4, 4, 2, padding=1),
+                                    nn.BatchNorm2d(self.inter_channel*4),
+                                    nn.ReLU(inplace=True))
+        self.deconv2 = nn.Sequential(nn.ConvTranspose2d(self.inter_channel*6, self.inter_channel*2, 4, 2, padding=1),
+                                    nn.BatchNorm2d(self.inter_channel*2),
+                                    nn.ReLU(inplace=True))
+        self.conv2 = nn.Sequential(nn.Conv2d(self.inter_channel*3, self.input_channel, 3, padding=1),
+                                    nn.Tanh())
     
     def forward(self, input):
 
-        # img = self.norm(input)
-        print(input.size())
-
         conv1 = self.conv1(input)
 
-        print(conv1.size())
+        layer1 = self.layer1(conv1)
 
-        output = self.deconv1(conv1)
+        layer2 = self.layer2(layer1)
 
-        print(output.size())
-        
-        # pool1 = self.pool(conv1)
-        
-        # conv2 = self.conv2(pool1)
+        res1 = self.residual(layer2)
 
-        # pool2 = self.pool(conv2)
+        sum1 = res1.add(layer2)
 
-        # res1 = self.residual(pool2)
+        res2 = self.residual(sum1)
 
-        # x = res1.add(pool2)
+        sum2 = res2.add(sum1)
 
-        # res2 = self.residual(x)
+        res3 = self.residual(sum2)
 
-        # x = res2.add(x)
+        sum3 = res3.add(sum2)
 
-        # res3 = self.residual(x)
+        res4 = self.residual(res3)
 
-        # x = res3.add(x)
+        sum4 = res4.add(sum3)
 
-        # deconv1 = self.deconv(x)
+        deconv1 = self.deconv1(sum4)
 
-        # x = deconv1.add(conv1)
+        deconv2 = self.deconv2(torch.cat((layer1,deconv1),1))
 
-        # conv3 = self.conv3(x)
-
-        # output = conv3.add(input)
+        output = self.conv2(torch.cat((conv1,deconv2),1))
 
         return output
 
 class DNet(nn.Module):
-    def __init__(self):
+    def __init__(self, patch_size, batch_size, patch_n):
         super(DNet, self).__init__()
-        self.input_channel=1
-        cnum = 48
-        self.model = nn.Sequential(
-            nn.Conv2d(1, cnum, 4, 2),
-            nn.BatchNorm2d(cnum),
+        self.input_channel = 1
+        self.inter_channel = 64
+        self.size = (patch_size//8)**2
+        self.batch_size = batch_size
+        self.patch_n = patch_n
+
+        self.layer1 = nn.Sequential(
+            nn.Conv2d(self.input_channel, self.inter_channel, 3, 1),
+            nn.BatchNorm2d(self.inter_channel),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Conv2d(cnum, 2*cnum, 4, 2),
-            nn.BatchNorm2d(2*cnum),
-            nn.LeakyReLU(0.2, inplace=True),
-            nn.Conv2d(2*cnum, 4*cnum, 4, 2),
-            nn.BatchNorm2d(4*cnum),
-            nn.LeakyReLU(0.2, inplace=True),
-            nn.Conv2d(4*cnum, 8*cnum, 4, 1),
-            nn.BatchNorm2d(8*cnum),
-            nn.LeakyReLU(0.2, inplace=True),
-            nn.Conv2d(8*cnum, 1, 4, 1),
-            nn.BatchNorm2d(self.input_channel),
-            nn.Sigmoid()
+            nn.Conv2d(self.inter_channel, self.inter_channel, 3, 2, padding=2),
+            nn.BatchNorm2d(self.inter_channel),
+            nn.LeakyReLU(0.2, inplace=True)
         )
 
-    def forward(self, img):
-        img = self.model(img)
-        return img
+        self.layer2 = nn.Sequential(
+            nn.Conv2d(self.inter_channel, 2*self.inter_channel, 3, 1),
+            nn.BatchNorm2d(2*self.inter_channel),
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Conv2d(2*self.inter_channel, 2*self.inter_channel, 3, 2, padding=2),
+            nn.BatchNorm2d(2*self.inter_channel),
+            nn.LeakyReLU(0.2, inplace=True)
+        )
+
+        self.layer3 = nn.Sequential(
+            nn.Conv2d(2*self.inter_channel, 4*self.inter_channel, 3, 1),
+            nn.BatchNorm2d(4*self.inter_channel),
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Conv2d(4*self.inter_channel, 4*self.inter_channel, 3, 2, padding=2),
+            nn.BatchNorm2d(4*self.inter_channel),
+            nn.LeakyReLU(0.2, inplace=True)
+        )
+
+        self.fc_layer = nn.Sequential(
+            nn.Linear(4*self.inter_channel*self.size*self.batch_size*self.patch_n, 1024),
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Linear(1024,1)
+        )
+
+    def forward(self, input):
+
+        layer1 = self.layer1(input)
+
+        layer2 = self.layer2(layer1)
+
+        layer3 = self.layer3(layer2)
+
+        x = torch.flatten(layer3)
+
+        fc1 = self.fc_layer(x)
+
+        return fc1
