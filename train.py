@@ -38,9 +38,9 @@ parser.add_argument('--gan_alt', type=int, default=2)
 
 parser.add_argument('--transform', type=bool, default=False)
 # if patch training, batch size is (--patch_n * --batch_size)
-parser.add_argument('--patch_n', type=int, default=10)		# default = 4
+parser.add_argument('--patch_n', type=int, default=5)		# default = 4
 parser.add_argument('--patch_size', type=int, default=120)	# default = 100
-parser.add_argument('--batch_size', type=int, default=10)	# default = 5
+parser.add_argument('--batch_size', type=int, default=2)	# default = 5
 parser.add_argument('--image_size', type=int, default=512)
 
 parser.add_argument('--lr', type=float, default=1e-4) # Defailt = 1e-3
@@ -78,6 +78,10 @@ def normalize_(image):
     image = (image - args.norm_range_min) / (args.norm_range_max - args.norm_range_min)
     return image
 
+def tanh_norm(image):
+	image = 2*normalize_(image)-1
+	return image
+
 image_size = args.image_size if args.patch_size == None else args.patch_size
 
 if args.load_chkpt:
@@ -103,21 +107,21 @@ if args.load_chkpt:
 	print('Current Epoch:{}, Total Iters: {}, Learning rate: {}, Batch size: {}'.format(cur_epoch, total_iters, lr, args.batch_size))
 else:
 	print('Training model from scrath')
-	g_net = GNet(image_size)
+	g_net = GNet()
 	g_net = to_cuda(g_net)
-	d_net = DNet(image_size, args.batch_size, args.patch_n)
+	d_net = DNet(args.batch_size, image_size, args.patch_n)
 	d_net = to_cuda(d_net)
-	optimizer_generator = torch.optim.Adam(g_net.parameters(), lr=args.lr)
-	optimizer_discriminator = torch.optim.Adam(d_net.parameters(), lr=4*args.lr)
+	optimizer_generator = torch.optim.Adam(g_net.parameters(), lr=args.lr, betas=(0.5,0.9))
+	optimizer_discriminator = torch.optim.Adam(d_net.parameters(), lr=4*args.lr, betas=(0.5,0.9), weight_decay = 10)
 	cur_epoch = 0
 	total_iters = 0
 	lr=args.lr
 
 # Losses
 Dloss = DLoss()
-Dloss = to_cuda(Dloss)
+# Dloss = to_cuda(Dloss)
 Gloss = GLoss()
-Gloss = to_cuda(Gloss)
+# Gloss = to_cuda(Gloss)
 
 losses = []
 train_dis = True
@@ -164,23 +168,18 @@ for epoch in tq_epoch:
 			y = y.view(-1, 1, shape_, shape_)
 
 		y = to_cuda(y)
+		y = tanh_norm(y)
 		x = to_cuda(x)
-		# x = normalize_(x)
 
 		# Predictions
-		# pred = g_net(x)
-		# pred = denormalize_(pred)
+		pred = g_net(x)
 
 		# Training discriminator
 		optimizer_discriminator.zero_grad()
 		d_net.zero_grad()
 		Dy = d_net(y)
-		print(Dy)
-
-		quit()
 		Dg = d_net(pred)
 		dloss = Dloss(Dy,Dg)
-		
 		dloss.backward(retain_graph=True)
 		optimizer_discriminator.step()
 
@@ -193,7 +192,6 @@ for epoch in tq_epoch:
 		dloss_sum += dloss.item()
 		gloss_sum += gloss.item()
 		
-
 		# Print progress after every 50 iterations
 		# if total_iters % args.print_iters == 0:
 		# 	print("STEP [{}], EPOCH [{}/{}], ITER [{}/{}] \nG_LOSS: {:.8f}, D_LOSS: {:.14f}, TIME: {:.1f}s".format(total_iters, epoch, 

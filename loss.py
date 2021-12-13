@@ -24,39 +24,37 @@ def create_window(window_size, channel):
     return  window # window.cuda()
 
 def get_pixel_loss(target, prediction):
-    loss = nn.MSELoss()
-    pixel_loss = loss(prediction, target)
+    B, C, H, W = target.size()
+    N = B*C*H*W
+    pixel_difference = target - prediction
+    pixel_loss = pixel_difference.norm(p=2) / float(N)
+    # loss = nn.MSELoss()
+    # pixel_loss = loss(prediction, target)
     return pixel_loss
 
-# OBTAIN THE SECOND CONV2_2 LAYERS FOR FEATURE EXTRACTION
-    # (0): Conv2d(3, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-    # (1): ReLU(inplace=True)
-    # ...
-    # (7): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-    # (8): ReLU(inplace=True)
+# OBTAIN VGG16 PRETRAINED MODEL EXCLUDING FULLY CONNECTED LAYERS
 def get_feature_layer_vgg16(image):
     image = torch.cat([image,image,image],1)
     vgg16 = models.vgg16(pretrained=True)
     vgg16 = to_cuda(vgg16)
-    return_layers = {'8': 'out_layer8'}
+    return_layers = {'29': 'out_layer29'}
     output_feature = IntermediateLayerGetter(vgg16.features, return_layers=return_layers)
     image_feature = output_feature(image)
-    return image_feature['out_layer8']
+    return image_feature['out_layer29']
 
 def get_feature_loss(target,prediction):
     feature_transformed_target = get_feature_layer_vgg16(target)
     feature_transformed_prediction = get_feature_layer_vgg16(prediction)
-    # feature_count = feature_transformed_target.shape[-1]
-    # feature_difference = feature_transformed_target-feature_transformed_prediction
-    # feature_loss = torch.sum(torch.pow(feature_difference,2))
-    # # feature_loss = torch.sum(torch.square(feature_transformed_target-feature_transformed_prediction))
-    # feature_loss = feature_loss/float(feature_count)
-    loss = nn.MSELoss()
-    feature_loss = loss(feature_transformed_prediction, feature_transformed_target)
+    _, C, H, W = feature_transformed_target.size()
+    feature_count = C*W*H
+    feature_difference = feature_transformed_prediction - feature_transformed_target
+    feature_loss = feature_difference.norm(p=2) / float(feature_count)
+    # loss = nn.MSELoss()
+    # feature_loss = loss(feature_transformed_prediction, feature_transformed_target)
     return feature_loss
 
 def get_smooth_loss(image):
-    batch, _ , image_height, image_width = image.size()
+    _, _ , image_height, image_width = image.size()
     horizontal_normal = image[:, :, :, 0:image_width-1]
     horizontal_one_right = image[:, :, :, 1:image_width]
     vertical_normal = image[:, :, 0:image_height-1, :]
@@ -74,8 +72,8 @@ class DLoss(torch.nn.Module):
         # self.weight = weight
 
     def forward(self, Dy, Dg):
-        return -torch.mean(Dy) + torch.mean(Dg)
-        # return - self.weight * torch.mean(neg)
+        # return -torch.mean(Dy) + torch.mean(Dg)
+        return -Dy + Dg
 
 class GLoss(torch.nn.Module):
     """
@@ -85,7 +83,7 @@ class GLoss(torch.nn.Module):
         super(GLoss, self).__init__()
 
     def forward(self, Dg, pred, y):
-        ADVERSARIAL_LOSS_FACTOR, PIXEL_LOSS_FACTOR, FEATURE_LOSS_FACTOR, SMOOTH_LOSS_FACTOR = 0.5, 1.0, 1.0, 1.0
-        loss = ADVERSARIAL_LOSS_FACTOR * -torch.mean(Dg) + PIXEL_LOSS_FACTOR * torch.log(get_pixel_loss(y,pred)) + \
-			FEATURE_LOSS_FACTOR * torch.log(get_feature_loss(y,pred)) + SMOOTH_LOSS_FACTOR * torch.log(get_smooth_loss(pred))
+        ADVERSARIAL_LOSS_FACTOR, PIXEL_LOSS_FACTOR, FEATURE_LOSS_FACTOR = 0.8, 0.1, 0.1
+        loss = ADVERSARIAL_LOSS_FACTOR * -Dg + PIXEL_LOSS_FACTOR * get_pixel_loss(y,pred) + \
+			FEATURE_LOSS_FACTOR * get_feature_loss(y,pred)
         return loss
