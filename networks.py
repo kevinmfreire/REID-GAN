@@ -92,9 +92,11 @@ class DNet(nn.Module):
                                     nn.Conv2d(4*self.inter_channel, 4*self.inter_channel, 3, 2, padding=2),
                                     nn.BatchNorm2d(4*self.inter_channel),
                                     nn.LeakyReLU(0.2, inplace=True))
-        self.fc_layer = nn.Sequential(nn.Linear(4*self.inter_channel*self.size*self.batch_size*self.patch_n, 1024),
+        self.drop_out = nn.Dropout()
+        self.fc_layer = nn.Sequential(nn.Linear(4*self.inter_channel*self.size, 1024),
                                     nn.LeakyReLU(0.2, inplace=True),
                                     nn.Linear(1024,1))
+        self.linear2 = nn.Linear(batch_size*patch_n,1)
 
     def forward(self, input):
 
@@ -104,8 +106,14 @@ class DNet(nn.Module):
 
         layer3 = self.layer3(layer2)
 
-        x = torch.flatten(layer3)
+        x = layer3.view(layer3.size(0),-1)
 
-        fc1 = self.fc_layer(x)
+        drop_out = self.drop_out(x)
 
-        return fc1
+        fc1 = self.fc_layer(drop_out)
+        
+        x2 = fc1.flatten()
+
+        fc2 = self.linear2(x2)
+
+        return fc2

@@ -172,7 +172,7 @@ for epoch in tq_epoch:
 		x = to_cuda(x)
 
 		# Predictions
-		pred = g_net(x)
+		# pred = g_net(x)
 
 		# Training discriminator
 		optimizer_discriminator.zero_grad()
