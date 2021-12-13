@@ -54,29 +54,29 @@ parser.add_argument('--norm_range_max', type=float, default=3071.0)
 args = parser.parse_args()
 
 data_loader = get_loader(mode=args.mode,
-                             load_mode=args.load_mode,
-                             saved_path=args.saved_path,
-                             test_patient=args.test_patient,
-                             patch_n=(args.patch_n if args.mode=='train' else None),
-                             patch_size=(args.patch_size if args.mode=='train' else None),
-                             transform=args.transform,
-                             batch_size=(args.batch_size if args.mode=='train' else 1),
-                             num_workers=args.num_workers)
+							load_mode=args.load_mode,
+							saved_path=args.saved_path,
+							test_patient=args.test_patient,
+							patch_n=(args.patch_n if args.mode=='train' else None),
+							patch_size=(args.patch_size if args.mode=='train' else None),
+							transform=args.transform,
+							batch_size=(args.batch_size if args.mode=='train' else 1),
+							num_workers=args.num_workers)
 
 # Check CUDA's presence
 cuda_is_present = True if torch.cuda.is_available() else False
 Tensor = torch.cuda.FloatTensor if cuda_is_present else torch.FloatTensor
 
 def to_cuda(data):
-    	return data.cuda() if cuda_is_present else data
+		return data.cuda() if cuda_is_present else data
 
 def denormalize_(image):
-    image = image * (args.norm_range_max - args.norm_range_min) + args.norm_range_min
-    return image
+	image = image * (args.norm_range_max - args.norm_range_min) + args.norm_range_min
+	return image
 
 def normalize_(image):
-    image = (image - args.norm_range_min) / (args.norm_range_max - args.norm_range_min)
-    return image
+	image = (image - args.norm_range_min) / (args.norm_range_max - args.norm_range_min)
+	return image
 
 def tanh_norm(image):
 	image = 2*normalize_(image)-1
@@ -119,6 +119,7 @@ else:
 
 # Losses
 Dloss = DLoss()
+criterion = nn.BCEWithLogitsLoss()
 # Dloss = to_cuda(Dloss)
 Gloss = GLoss()
 # Gloss = to_cuda(Gloss)
@@ -136,16 +137,18 @@ for epoch in tq_epoch:
 	gloss_sum, dloss_sum, count = 0, 0, 0
 	
 	# Alteranating training between discriminator and generator
-	train_gen = gen_count >= args.gan_alt
-	if not train_gen:
-		print(f"Training Discriminator {gen_count+1}")
-	else:
-		print(f"Training Generator  {gen_count - 1}")
-	g_net.train(train_gen)
-	d_net.train(not train_gen)
-	gen_count += 1
-	if gen_count == args.gan_alt*5 + args.gan_alt:
-		gen_count = 0
+	# train_gen = gen_count >= args.gan_alt
+	# if not train_gen:
+	# 	print(f"Training Discriminator {gen_count+1}")
+	# else:
+	# 	print(f"Training Generator  {gen_count - 1}")
+	# g_net.train(train_gen)
+	# d_net.train(not train_gen)
+	# gen_count += 1
+	# if gen_count == args.gan_alt*5 + args.gan_alt:
+	# 	gen_count = 0
+	d_net.train()
+	g_net.train()
 
 	data_tqdm = tqdm(data_loader, position=0, leave=True, desc='Iters')
 	for i, (x, y) in enumerate(data_tqdm):
@@ -172,23 +175,35 @@ for epoch in tq_epoch:
 		x = to_cuda(x)
 
 		# Predictions
-		# pred = g_net(x)
+		pred = g_net(x)
 
-		# Training discriminator
-		optimizer_discriminator.zero_grad()
-		d_net.zero_grad()
-		Dy = d_net(y)
-		Dg = d_net(pred)
-		dloss = Dloss(Dy,Dg)
-		dloss.backward(retain_graph=True)
-		optimizer_discriminator.step()
+		for _ in range(5):
+			# Training discriminator
+			real = torch.ones([y.size(0), 1], dtype=torch.float, device='cuda'if cuda_is_present else 'cpu')
+			fake = torch.zeros([y.size(0), 1], dtype=torch.float, device='cuda' if cuda_is_present else 'cpu')
+			d_net.parameters(True)
+			optimizer_discriminator.zero_grad()
+			d_net.zero_grad()
+			Dtarget = d_net(y)
+			Dpred = d_net(pred)
+			# Dy = d_net(y)
+			# Dg = d_net(pred)
+			Dy = criterion(Dtarget, real)
+			Dg = criterion(Dpred, fake)
+			dloss = Dloss(Dy,Dg)
+			dloss.backward(retain_graph=True)
+			optimizer_discriminator.step()
 
 		# Training generator
+		d_net.parameter(requires_grad=False)
 		optimizer_generator.zero_grad()
 		g_net.zero_grad()
+		Dpred = d_net(pred)
+		Dg = criterion(Dpred, fake)
 		gloss = Gloss(Dg, pred, y)
 		gloss.backward()
 		optimizer_generator.step()
+
 		dloss_sum += dloss.item()
 		gloss_sum += gloss.item()
 		

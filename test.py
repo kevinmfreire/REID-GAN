@@ -65,6 +65,10 @@ def denormalize_(image):
     image = image * (args.norm_range_max - args.norm_range_min) + args.norm_range_min
     return image
 
+def denormalize_tanh(image):
+    image = denormalize_((image+1)/2)
+    return image
+
 # def normalize_(image, MIN_B=-160.0, MAX_B=240.0):
 #     image = (image - MIN_B) / (MAX_B - MIN_B)
 #     return image
@@ -105,7 +109,7 @@ Tensor = torch.cuda.FloatTensor if cuda_is_present else torch.FloatTensor
 whole_model = torch.load(args.save_path + 'latest_ckpt.pth.tar', map_location=torch.device('cuda' if cuda_is_present else 'cpu'))
 netG_state_dict= whole_model['netG_state_dict']
 epoch = whole_model['epoch']
-netG = GNet(args.image_size)
+netG = GNet()
 netG = to_cuda(netG)
 netG.load_state_dict(netG_state_dict)
 
@@ -128,7 +132,7 @@ with torch.no_grad():
         pred = netG(x)
 
         x = denormalize_(x)
-        pred = denormalize_(pred)
+        pred = denormalize_tanh(pred)
 
         # Reshaping pred for computing measurements
         x = x.view(shape_, shape_).cpu().detach()
