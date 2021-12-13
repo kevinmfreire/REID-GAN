@@ -28,7 +28,7 @@ parser.add_argument('--mode', type=str, default='train')
 parser.add_argument('--load_mode', type=int, default=1)
 parser.add_argument('--data_path', type=str, default='./patient')
 parser.add_argument('--saved_path', type=str, default='./patient/data/npy_img/')
-parser.add_argument('--save_path', type=str, default='./normalized_model/')
+parser.add_argument('--save_path', type=str, default='./deconv_model/')
 parser.add_argument('--test_patient', type=str, default='L064')
 
 parser.add_argument('--save_iters', type=int, default=10)
@@ -38,9 +38,9 @@ parser.add_argument('--gan_alt', type=int, default=2)
 
 parser.add_argument('--transform', type=bool, default=False)
 # if patch training, batch size is (--patch_n * --batch_size)
-parser.add_argument('--patch_n', type=int, default=5)		# default = 4
+parser.add_argument('--patch_n', type=int, default=10)		# default = 4
 parser.add_argument('--patch_size', type=int, default=120)	# default = 100
-parser.add_argument('--batch_size', type=int, default=2)	# default = 5
+parser.add_argument('--batch_size', type=int, default=16)	# default = 5
 parser.add_argument('--image_size', type=int, default=512)
 
 parser.add_argument('--lr', type=float, default=1e-4) # Defailt = 1e-3
@@ -192,12 +192,6 @@ for epoch in tq_epoch:
 		dloss_sum += dloss.item()
 		gloss_sum += gloss.item()
 		
-		# Print progress after every 50 iterations
-		# if total_iters % args.print_iters == 0:
-		# 	print("STEP [{}], EPOCH [{}/{}], ITER [{}/{}] \nG_LOSS: {:.8f}, D_LOSS: {:.14f}, TIME: {:.1f}s".format(total_iters, epoch, 
-		# 																								args.num_epochs, i+1, 
-		# 																								len(data_loader), gloss.item(), dloss.item()
-		# 																								,time.time() - start_time))
 		data_tqdm.set_postfix({'ITER': i+1, 'G_LOSS': '{:.5f}'.format(gloss.item()), 'D_LOSS': '{:.8f}'.format(dloss.item())})
 		if total_iters % args.decay_iters == 0:
 			lr = lr * 0.5
@@ -224,7 +218,7 @@ for epoch in tq_epoch:
 			# torch.save(saved_model, '{}iter_{}_ckpt.pth.tar'.format(args.save_path, total_iters))
 			torch.save(saved_model, '{}latest_ckpt.pth.tar'.format(args.save_path))
 			# save_model(saved_model, '{}latest_ckpt.pth.tar'.format(args.save_path))
-			cmd = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/normalized_model/'.format(args.save_path)
+			cmd = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/deconv_model/'.format(args.save_path)
 			os.system(cmd)
 	
 	# Calculating average loss
@@ -238,8 +232,8 @@ for epoch in tq_epoch:
 	tq_epoch.set_postfix({'STEP': total_iters,'AVG_G_LOSS': '{:.5f}'.format(avg_gloss), 'AVG_D_LOSS': '{:.8f}'.format(avg_dloss)})
 	# Saving model after every 10 epoch
 	if epoch % 10 == 0:
-		cmd1 = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/normalized_model/epoch_{}_ckpt.pth.tar'.format(args.save_path, epoch)
-		cmd2 = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/normalized_model/'.format(args.save_path)
+		cmd1 = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/deconv_model/epoch_{}_ckpt.pth.tar'.format(args.save_path, epoch)
+		cmd2 = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/deconv_model/'.format(args.save_path)
 		os.system(cmd1)
 		os.system(cmd2)
 	losses.append((gloss.item(), dloss.item()))
