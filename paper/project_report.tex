@@ -6,8 +6,8 @@
 \begin{document}
 \title{Low-Dose CT Image denoising and Restoration using General Adversarial Networks}
 
-\author{Kevin Freire\\
-kfreirea@ryerson.ca\\
+\author{Kevin Freire $|$ kfreirea@ryerson.ca\\
+Walter Freire $|$ andrei.freire@ryerson.ca \\
 Department of Electrical and Computer Engineering\\
 Ryerson University, Toronto, Canada.}
 \maketitle
@@ -43,6 +43,7 @@ Generative Adversarial Network was first introduced in 2014 by Goodfellow \emph{
 	
 	The remainder of this paper is organized as follows.  The proposed method based on \cite{alsaiari2019image}, with perceptual loss, pixel-pixel loss, smooth loss and adversarial loss are presented in \ref{method}.  Then, experiments and analysis of the results are presented in section \ref{experiment settings} and \ref{results and discussion}.  Lastly, Section \ref{conclusion} gives a summary of this paper and looks forward to some possible future research directions.
 
+
 \cite{8340157} Yang \emph{et al} - Low-Dose CT Image Denoising Using a Generative Adversarial Network With Wasserstein Distance and Perceptual Loss
 
 \cite{9474492} Bera \emph{et al} - Noise Conscious Training of Non Local Neural Network Powered by Self Attentive Spectral Normalized Markovian Patch GAN for Low Dose CT Denoising
@@ -64,22 +65,28 @@ Generative Adversarial Network was first introduced in 2014 by Goodfellow \emph{
 % METHOD
 \section{Method}
 \label{method}
+	We built a GAN network structure for image denoising, which like, \cite{alsaiari2019image}, is based on ResNet \cite{he2016deep}.  A generator network is trained to generate noise fre images through comptition with the discriminator network, using ground truth NDCT images to imporve the quality of the generated images.  Our network makes use of residual blocks, skip connections, and batch normalization.  Due to training limitations, we used three residual blocks.  However, having a larger number of residual blocks would increase the training accuracy significantly, but with a higher computational complexity and longer training times.\\
+	Suppose that $z \in \{z_k\}_1^N$ denotes the LDCT image, $x \in \{x_k\}_1^N$ denotes the NDCT image, and $p_l$ and $p_r$ represent the distribution of LDCT and NDCT images, respectively.  The generator G learns a mapping $G: z \rightarrow \hat{x}$, where \emph{z} is the LDCT the generator is conditioned upon.  $\hat{x}$ is the denoised CT that is expected to be as close to as the NDCT image \emph{x}.  The discriminator D, is to differentiate the generated image \emph{z} from the real \emph{x}.  
+	
+% LOSS FUNCTION
+\subsection{Refined Loss Function}
+\label{loss function}
+In the original GAN \cite{goodfellow2014generative}, D and G are trained by solving the following minmax problem\\
 
+\begin{equation}
+	\mathop{min}_{G}\mathop{max}_{D} L_{GAN}(D,G) = -E_{x \tilde p_r}[D(x)] + E_{z \tilde p_l}[1-D(G(z))]
+\end{equation}
 
+where $E(\cdot)$ denotes the expectation operator.  The generator G transforms a noisy sample to mimic a real sample, which defines a data distribution, denoted by $p_g$.  Then D is trained to become an optimal discriminator for a fixed G, the minimization search for G is equivalent to minimizing the Jensen-Shannon (JS) divergence of $p_r$ and $p_g$, which will lead to a vanished gradient on the Generator G  \cite{8340157} and G will stop updating as the training continues.
 
 % GENERATOR NETWORK
 \subsection{Generator Network}
 \label{generator}
-
+The goal of a single image denoising is to generate a realistic image with high quaility.  The 
 
 % DISCRIMINATOR NETWORK
 \subsection{Discriminator Network}
 \label{discriminator}
-
-
-% LOSS FUNCTION
-\subsection{Refined Loss Function}
-\label{loss function}
 
 
 % EXPERIMENT SETTINGS
