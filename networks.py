@@ -63,6 +63,7 @@ class GNet(nn.Module):
 
         output = self.conv2(torch.cat((conv1,deconv2),1))
 
+
         return output
 
 class DNet(nn.Module):

@@ -127,12 +127,12 @@ with torch.no_grad():
 
         y = to_cuda(y)
         x = to_cuda(x)
-        x = normalize_(x)
+        # x = normalize_(x)
         
         pred = netG(x)
 
-        x = denormalize_(x)
-        pred = denormalize_tanh(pred)
+        # x = denormalize_(x)
+        pred = denormalize_(pred)
 
         # Reshaping pred for computing measurements
         x = x.view(shape_, shape_).cpu().detach()

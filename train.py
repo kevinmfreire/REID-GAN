@@ -199,7 +199,7 @@ for epoch in tq_epoch:
 		optimizer_generator.zero_grad()
 		g_net.zero_grad()
 		Dpred = d_net(pred)
-		Dg = criterion(Dpred, fake)
+		Dg = criterion(Dpred, real)
 		gloss = Gloss(Dg, pred, y)
 		gloss.backward()
 		optimizer_generator.step()
