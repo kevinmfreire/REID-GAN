@@ -43,25 +43,6 @@ Generative Adversarial Network was first introduced in 2014 by Goodfellow \emph{
 	
 	The remainder of this paper is organized as follows.  The proposed method based on \cite{alsaiari2019image}, with perceptual loss, pixel-pixel loss, smooth loss and adversarial loss are presented in \ref{method}.  Then, experiments and analysis of the results are presented in section \ref{experiment settings} and \ref{results and discussion}.  Lastly, Section \ref{conclusion} gives a summary of this paper and looks forward to some possible future research directions.
 
-
-\cite{8340157} Yang \emph{et al} - Low-Dose CT Image Denoising Using a Generative Adversarial Network With Wasserstein Distance and Perceptual Loss
-
-\cite{9474492} Bera \emph{et al} - Noise Conscious Training of Non Local Neural Network Powered by Self Attentive Spectral Normalized Markovian Patch GAN for Low Dose CT Denoising
-
-\cite{yin2021unpaired} Yin \emph{et al} - Unpaired Image Denoising via Wasserstein GAN in Low-Dose CT Image with Multi-Perceptual Loss and Fidelity Loss
-
-\cite{radford2015unsupervised} Radford \emph{et al}. - UNSUPERVISED REPRESENTATION LEARNING WITH DEEP CONVOLUTIONAL GENERATIVE ADVERSARIAL NETWORKS
-
-\cite{chen2017low} Chen \emph{et al}. - Low-dose ct via deep neural network
-
-\cite{chen2017low2} Chen \emph{et al} - Low-dose CT with a residual encoder-decoder convolutional neural network
-
-\cite{huang2017beyond} Huang \emph{et al}. - Beyond face rotation: Global and local perception gan for photorealistic and identity preserving frontal view synthesis
-
-\cite{goodfellow2014generative} Goodfellow \emph{et al}. - Generative adversarial nets
-
-\cite{yi2018sharpness} Yi \emph{et al}. - Sharpness-aware low-dose CT denoising using conditional generative adversarial network
-
 % METHOD
 \section{Method}
 \label{method}
@@ -74,10 +55,24 @@ Generative Adversarial Network was first introduced in 2014 by Goodfellow \emph{
 In the original GAN \cite{goodfellow2014generative}, D and G are trained by solving the following minmax problem\\
 
 \begin{equation}
-	\mathop{min}_{G}\mathop{max}_{D} L_{GAN}(D,G) = -E_{x \tilde p_r}[D(x)] + E_{z \tilde p_l}[1-D(G(z))]
+	\mathop{min}_{G}\mathop{max}_{D} L_{GAN}(D,G) = -E_{x \tilde p_r}[D(x)] + E_{z \sim p_l}[1-D(G(z))]
 \end{equation}
 
-where $E(\cdot)$ denotes the expectation operator.  The generator G transforms a noisy sample to mimic a real sample, which defines a data distribution, denoted by $p_g$.  Then D is trained to become an optimal discriminator for a fixed G, the minimization search for G is equivalent to minimizing the Jensen-Shannon (JS) divergence of $p_r$ and $p_g$, which will lead to a vanished gradient on the Generator G  \cite{8340157} and G will stop updating as the training continues.
+where $E(\cdot)$ denotes the expectation operator, $G(\cdot)$ and $D(\cdot)$ represents the outputs of G and D.  The generator G transforms a noisy sample to mimic a real sample, which defines a data distribution, denoted by $p_g$.  Then D is trained to become an optimal discriminator for a fixed G, the minimization search for G is equivalent to minimizing the Jensen-Shannon (JS) divergence of $p_r$ and $p_g$, which will lead to a vanished gradient on the Generator G  \cite{8340157} and G will stop updating as the training continues.  \\
+	In the process of using CT image training, the feature difference between the LDCT and NCT image will have a certain probability of structural loss in denoising results.  In order to obtain a good quality image, we include the Minimum Square Error Loss (MSE) between the Generated image $\hat{x}$ and the ground truth $x$.  The function is expressed as follows:
+	
+\begin{equation}
+	L_{MSE} = E_{z\sim p_l}\left[ \frac{1}{N}\|x - G(z)\|^2 \right],
+\end{equation}
+	
+Where $\|\cdot\|^2$ is the square L2-norm (MSE Loss).  A lower difference denotes a higher quality of the generated image.  However, the MSE loss can potentially generate blurry images and cause the distortion or loss of details.  Thus, we also applied the perceptual loss.\\
+	With perceptual loss, the rational behind it is two-fold.  First, when a person compares two images, the perception is not performed pixel-by-pixel.  The human vision extracts and compares features from images \cite{nixon2019feature}.  With perceptual loss, it guides the model towards image style conversion \cite{johnson2016perceptual}, image denoising \cite{8340157}, and other tasks.  The perceptual loss function is introduced to learn feature distribution of NDCT images from the feature space to guide the denoising task of LDCT images.  Therefore, we included a pre-trained deep CNN (VGG16) for feature extraction and compared the denoised output against the ground truth in terms of the extracted features.  The perceptual loss function is defined in a feature space:
+	
+\begin{equation}
+	L_{Perceptual}(G) = E_{(x,z)}\left[ \frac{1}{whd}\|\Phi(G(z))-\Phi(x)\|^2 \right],
+\end{equation}
+
+	where $\Phi$ is the feature map obtained from the output of the second convolutional layer of the VGG-16 pretrained network, $G(z)$ is the denoising result of the LDCT image, \emph{w}, \emph{h}, \emph{d} represents width, height and depth of the feature map, respectively.  It should be noted that we used the VGG-16 network as the feature extractor.  The input of the network is a colour image, including three channels, while the CT images is greyscale image.  Thus, before suing the network for feature extraction, we duplicated the CT image to make RGB channels.
 
 % GENERATOR NETWORK
 \subsection{Generator Network}
@@ -105,6 +100,24 @@ The goal of a single image denoising is to generate a realistic image with high 
 % CONCLUSION
 \section{Conclusion}
 \label{conclusion}
+
+\cite{8340157} Yang \emph{et al} - Low-Dose CT Image Denoising Using a Generative Adversarial Network With Wasserstein Distance and Perceptual Loss
+
+\cite{9474492} Bera \emph{et al} - Noise Conscious Training of Non Local Neural Network Powered by Self Attentive Spectral Normalized Markovian Patch GAN for Low Dose CT Denoising
+
+\cite{yin2021unpaired} Yin \emph{et al} - Unpaired Image Denoising via Wasserstein GAN in Low-Dose CT Image with Multi-Perceptual Loss and Fidelity Loss
+
+\cite{radford2015unsupervised} Radford \emph{et al}. - UNSUPERVISED REPRESENTATION LEARNING WITH DEEP CONVOLUTIONAL GENERATIVE ADVERSARIAL NETWORKS
+
+\cite{chen2017low} Chen \emph{et al}. - Low-dose ct via deep neural network
+
+\cite{chen2017low2} Chen \emph{et al} - Low-dose CT with a residual encoder-decoder convolutional neural network
+
+\cite{huang2017beyond} Huang \emph{et al}. - Beyond face rotation: Global and local perception gan for photorealistic and identity preserving frontal view synthesis
+
+\cite{goodfellow2014generative} Goodfellow \emph{et al}. - Generative adversarial nets
+
+\cite{yi2018sharpness} Yi \emph{et al}. - Sharpness-aware low-dose CT denoising using conditional generative adversarial network
 
 % REFERENCES
 \bibliography{project_reference}
