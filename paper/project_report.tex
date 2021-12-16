@@ -15,7 +15,7 @@ Ryerson University, Toronto, Canada.}
 
 % ABSTRACT
 \begin{abstract}
-
+Medical Imaging has been a growing topic in computer vision for its life saving applications.  Medical professionals rely on good quality images of their scan in order to correctly identify tumours or other anomalies.  Recent studies have shown that Computerize Tomography CT scans have great results using high radiations for their X-Rays.  Studies have shown that these CT Scans have produced more than half the radiation from medical use which results in problems for long term use of these expensive machines.  Some solutions have involved reducing the X-Ray magnitude in order to reduce exposure to X-Ray but this results in lower quality images with a lot of noise.  We implemented a denoising neural network trained on medical images to reduce the noise from low dose CT Scan.  This model is capable of producing High Dose quality imaging using low dose CT Scans at a reasonable rate.
 
 
 \end{abstract}
@@ -88,7 +88,7 @@ The goal of a single image denoising is to generate a realistic image with high 
 % this section includes dataset and training details
 \section{Experiment Settings}
 \label{experiment settings}
-
+The network was trained using Google Colab Pro which use a K80 GPU and 24 GB of RAM using the Pytorch framework. We used a batch size of 16,  and ran over 15000 iterations for training which was around 500 epochs.  Our Dataset was obtained from 2016 NIH-AAPM-Mayo Clinic Low Dose CT Grand Challenge by Mayo Clinic.  During training we set different hyper parameters which include $\lambda_a=0.5$, $\lambda_p=1.0$, $\lambda_f=1.0$ and $\lambda_s=0.0001$. We set $K=32$ and $k_2=48$ for the generator and discriminator channel filters.  For the convolutional and deconvolution layers of the generator we used a kernel size of 9 and stride 1.  All the other convolutional layers in the generator we had a kernel size of 3x3 and stride 1.   The discriminator first 3 layers, all of its convolutional networks had a 4x4 kernel size with stride 2 and zero padding by 1.  the last two layers in D are composed of kernels of size 4x4 with stride 1 and zero-padding of 1. To train the discriminator and generator we took the approach of training one at a time.  We did this by training the discriminator first for 2 epochs and then training the generator for 10 epoch, then the cycle repeats.  
 % RESULTS AND DISCUSSIONS
 \section{Results and Discussion}
 \label{results and discussion}
