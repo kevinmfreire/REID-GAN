@@ -88,7 +88,7 @@ The goal of a single image denoising is to generate a realistic image with high 
 % this section includes dataset and training details
 \section{Experiment Settings}
 \label{experiment settings}
-The network was trained using Google Colab Pro which use a K80 GPU and 24 GB of RAM using the Pytorch framework. We used a batch size of 16,  and ran over 15000 iterations for training which was around 500 epochs.  Our Dataset was obtained from 2016 NIH-AAPM-Mayo Clinic Low Dose CT Grand Challenge by Mayo Clinic.  During training we set different hyper parameters which include $\lambda_a=0.5$, $\lambda_p=1.0$, $\lambda_f=1.0$ and $\lambda_s=0.0001$. We set $K=32$ and $k_2=48$ for the generator and discriminator channel filters.  For the convolutional and deconvolution layers of the generator we used a kernel size of 9 and stride 1.  All the other convolutional layers in the generator we had a kernel size of 3x3 and stride 1.   The discriminator first 3 layers, all of its convolutional networks had a 4x4 kernel size with stride 2 and zero padding by 1.  the last two layers in D are composed of kernels of size 4x4 with stride 1 and zero-padding of 1. To train the discriminator and generator we took the approach of training one at a time.  We did this by training the discriminator first for 2 epochs and then training the generator for 10 epoch, then the cycle repeats.  
+The network was trained using Google Colab Pro which use a K80 GPU and 24 GB of RAM using the Pytorch framework. We used a batch size of 16,  and ran over 15000 iterations for training which was around 500 epochs.  Our Dataset was obtained from 2016 NIH-AAPM-Mayo Clinic Low Dose CT Grand Challenge by Mayo Clinic.  During training we set different hyper parameters which include $\lambda_a=0.5$, $\lambda_p=1.0$, $\lambda_f=1.0$ and $\lambda_s=0.0001$. We set $K=32$ and $k_2=48$ for the generator and discriminator channel filters.  For the convolutional and deconvolution layers of the generator we used a kernel size of 9 and stride 1.  All the other convolutional layers in the generator we had a kernel size of 3x3 and stride 1.   The discriminator first 3 layers, all of its convolutional networks had a 4x4 kernel size with stride 2 and zero padding by 1.  the last two layers in D are composed of kernels of size 4x4 with stride 1 and zero-padding of 1. To train the discriminator and generator we took the approach of training one at a time.  We did this by training the discriminator first for 2 epochs and then training the generator for 10 epoch, then the cycle repeats.  We have implemented our approach and version of our code can be obtained from https://github.com/kevinfreire/ldct-denoising.
 % RESULTS AND DISCUSSIONS
 \section{Results and Discussion}
 \label{results and discussion}
@@ -100,7 +100,9 @@ The network was trained using Google Colab Pro which use a K80 GPU and 24 GB of 
 % CONCLUSION
 \section{Conclusion}
 \label{conclusion}
-
+The denoising network is an end-to-end operation, in which the input is a low dose CT Scans and the output is a high dose CT scan.  The results we obtained were not as comparable as the papers we have referenced due to small tweaking of the networks we have done, but the general concept still remains.  This network needs to be fine tuned as well as tested on other images that are not CT scans and see its performance.  We also would like to explore using newer VGG models and different Loss functions to observe results.  
+% REFERENCES
+\cleardoublepage
 \cite{8340157} Yang \emph{et al} - Low-Dose CT Image Denoising Using a Generative Adversarial Network With Wasserstein Distance and Perceptual Loss
 
 \cite{9474492} Bera \emph{et al} - Noise Conscious Training of Non Local Neural Network Powered by Self Attentive Spectral Normalized Markovian Patch GAN for Low Dose CT Denoising
@@ -119,7 +121,8 @@ The network was trained using Google Colab Pro which use a K80 GPU and 24 GB of 
 
 \cite{yi2018sharpness} Yi \emph{et al}. - Sharpness-aware low-dose CT denoising using conditional generative adversarial network
 
-% REFERENCES
+
+
 \bibliography{project_reference}
 \bibliographystyle{ieeetr}
 \end{document}
