@@ -1,2 +1,6 @@
 paper/*.pdf
 paper/*.gz
+patient/data/
+paper/*.aux
+paper/*.log
+__pycache__/
