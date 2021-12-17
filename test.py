@@ -121,6 +121,8 @@ with torch.no_grad():
         y = to_cuda(y)
         
         pred = netG(x)
+        print(pred)
+        quit()
 
         # Reshaping pred for computing measurements
         x = x.view(shape_, shape_).cpu().detach()
