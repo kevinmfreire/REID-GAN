@@ -73,7 +73,7 @@ class DLoss(torch.nn.Module):
 
     def forward(self, Dy, Dg):
         # return -torch.mean(Dy) + torch.mean(Dg)
-        return Dg - Dy
+        return -(torch.log(Dy) + torch.log(1.-Dg))
 
 class GLoss(torch.nn.Module):
     """
@@ -83,7 +83,7 @@ class GLoss(torch.nn.Module):
         super(GLoss, self).__init__()
 
     def forward(self, Dg, pred, y):
-        ADVERSARIAL_LOSS_FACTOR, PIXEL_LOSS_FACTOR, FEATURE_LOSS_FACTOR = 0.8, 0.1, 0.1
-        loss = ADVERSARIAL_LOSS_FACTOR * -Dg + PIXEL_LOSS_FACTOR * get_pixel_loss(y,pred) + \
+        ADVERSARIAL_LOSS_FACTOR, PIXEL_LOSS_FACTOR, FEATURE_LOSS_FACTOR = 0.5, 0.1, 0.1
+        loss = ADVERSARIAL_LOSS_FACTOR * -torch.log(Dg) + PIXEL_LOSS_FACTOR * get_pixel_loss(y,pred) + \
 			FEATURE_LOSS_FACTOR * get_feature_loss(y,pred)
         return loss
