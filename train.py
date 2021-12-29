@@ -40,7 +40,7 @@ parser.add_argument('--transform', type=bool, default=False)
 # if patch training, batch size is (--patch_n * --batch_size)
 parser.add_argument('--patch_n', type=int, default=10)		# default = 4
 parser.add_argument('--patch_size', type=int, default=120)	# default = 100
-parser.add_argument('--batch_size', type=int, default=16)	# default = 5
+parser.add_argument('--batch_size', type=int, default=10)	# default = 5
 parser.add_argument('--image_size', type=int, default=512)
 
 parser.add_argument('--lr', type=float, default=2e-4) # Defailt = 1e-3
@@ -130,7 +130,7 @@ torch.autograd.set_detect_anomaly(True)
 gen_count = 0
 start_time = time.time()
 tq_epoch = tqdm(range(cur_epoch, args.num_epochs),position=1, leave=True, desc='Epochs')
-print("Training Discriminator")
+# print("Training Discriminator")
 for epoch in tq_epoch:
 
 	# Initializing sum of losses for discriminator and generator
@@ -195,7 +195,7 @@ for epoch in tq_epoch:
 			optimizer_discriminator.step()
 
 		# Training generator
-		d_net.parameter(requires_grad=False)
+		d_net.parameters(False)
 		optimizer_generator.zero_grad()
 		g_net.zero_grad()
 		Dpred = d_net(pred)
