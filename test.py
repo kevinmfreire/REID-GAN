@@ -139,8 +139,6 @@ with torch.no_grad():
         print(pred.max())
         print(pred.min())
         pred = denormalize_tanh(pred)
-        print(pred)
-        quit()
 
         # Reshaping pred for computing measurements
         x = x.view(shape_, shape_).cpu().detach()
