@@ -73,7 +73,7 @@ class DLoss(torch.nn.Module):
 
     def forward(self, Dy, Dg):
         # return -torch.mean(Dy) + torch.mean(Dg)
-        return Dy + Dg
+        return Dg - Dy
 
 class GLoss(torch.nn.Module):
     """

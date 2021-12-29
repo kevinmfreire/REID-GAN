@@ -43,7 +43,7 @@ parser.add_argument('--patch_size', type=int, default=120)	# default = 100
 parser.add_argument('--batch_size', type=int, default=16)	# default = 5
 parser.add_argument('--image_size', type=int, default=512)
 
-parser.add_argument('--lr', type=float, default=1e-4) # Defailt = 1e-3
+parser.add_argument('--lr', type=float, default=2e-4) # Defailt = 1e-3
 parser.add_argument('--num_epochs', type=int, default=500)
 parser.add_argument('--num_workers', type=int, default=4)
 parser.add_argument('--load_chkpt', type=bool, default=False)
@@ -112,7 +112,7 @@ else:
 	d_net = DNet(args.batch_size, image_size, args.patch_n)
 	d_net = to_cuda(d_net)
 	optimizer_generator = torch.optim.Adam(g_net.parameters(), lr=args.lr, betas=(0.5,0.9))
-	optimizer_discriminator = torch.optim.Adam(d_net.parameters(), lr=4*args.lr, betas=(0.5,0.9), weight_decay = 10)
+	optimizer_discriminator = torch.optim.Adam(d_net.parameters(), lr=4*args.lr, betas=(0.5,0.9))
 	cur_epoch = 0
 	total_iters = 0
 	lr=args.lr
@@ -171,7 +171,7 @@ for epoch in tq_epoch:
 			y = y.view(-1, 1, shape_, shape_)
 
 		y = to_cuda(y)
-		y = tanh_norm(y)
+		# y = tanh_norm(y)
 		x = to_cuda(x)
 
 		# Predictions
@@ -179,18 +179,20 @@ for epoch in tq_epoch:
 
 		for _ in range(5):
 			# Training discriminator
-			real = torch.ones([y.size(0), 1], dtype=torch.float, device='cuda'if cuda_is_present else 'cpu')
-			fake = torch.zeros([y.size(0), 1], dtype=torch.float, device='cuda' if cuda_is_present else 'cpu')
 			d_net.parameters(True)
 			optimizer_discriminator.zero_grad()
 			d_net.zero_grad()
-			Dtarget = d_net(y)
-			Dpred = d_net(pred)
+			Dt = d_net(y)
+			Dp = d_net(pred)
+			real = torch.ones([Dt.size(0), Dt.size(1)], dtype=torch.float, device='cuda'if cuda_is_present else 'cpu')
+			fake = torch.zeros([Dt.size(0), Dt.size(1)], dtype=torch.float, device='cuda' if cuda_is_present else 'cpu')
 			# Dy = d_net(y)
 			# Dg = d_net(pred)
-			Dy = criterion(Dtarget, real)
-			Dg = criterion(Dpred, fake)
+			Dy = criterion(Dt, real)
+			Dg = criterion(Dp, fake)
 			dloss = Dloss(Dy,Dg)
+			print(dloss)
+			quit()
 			dloss.backward(retain_graph=True)
 			optimizer_discriminator.step()
 

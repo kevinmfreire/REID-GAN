@@ -70,50 +70,35 @@ class DNet(nn.Module):
     def __init__(self, batch_size, patch_size, patch_n):
         super(DNet, self).__init__()
         self.input_channel = 1
-        self.inter_channel = 64
+        self.inter_channel = 128
         self.size = (patch_size//8)**2
         self.batch_size = batch_size
         self.patch_n = patch_n
 
-        self.layer1 = nn.Sequential(nn.Conv2d(self.input_channel, self.inter_channel, 3, 1),
-                                    nn.LeakyReLU(0.2, inplace=True),
-                                    nn.Conv2d(self.inter_channel, self.inter_channel, 3, 2, padding=2),
-                                    nn.BatchNorm2d(self.inter_channel),
-                                    nn.LeakyReLU(0.2, inplace=True))
-        self.layer2 = nn.Sequential(nn.Conv2d(self.inter_channel, 2*self.inter_channel, 3, 1),
-                                    nn.BatchNorm2d(2*self.inter_channel),
-                                    nn.LeakyReLU(0.2, inplace=True),
-                                    nn.Conv2d(2*self.inter_channel, 2*self.inter_channel, 3, 2, padding=2),
+        self.conv1 = nn.Sequential(nn.Conv2d(self.input_channel, self.inter_channel, 3, 2, padding =1),
+                                   nn.LeakyReLU(0.2, inplace=True))
+        self.conv2 = nn.Sequential(nn.Conv2d(self.inter_channel, 2*self.inter_channel, 3, 2, padding=1),
                                     nn.BatchNorm2d(2*self.inter_channel),
                                     nn.LeakyReLU(0.2, inplace=True))
-        self.layer3 = nn.Sequential(nn.Conv2d(2*self.inter_channel, 4*self.inter_channel, 3, 1),
-                                    nn.BatchNorm2d(4*self.inter_channel),
-                                    nn.LeakyReLU(0.2, inplace=True),
-                                    nn.Conv2d(4*self.inter_channel, 4*self.inter_channel, 3, 2, padding=2),
+        self.conv3 = nn.Sequential(nn.Conv2d(2*self.inter_channel, 4*self.inter_channel, 3, 2, padding=1),
                                     nn.BatchNorm2d(4*self.inter_channel),
                                     nn.LeakyReLU(0.2, inplace=True))
-        self.drop_out = nn.Dropout()
-        self.fc_layer = nn.Sequential(nn.Linear(4*self.inter_channel*self.size, 1024),
-                                    nn.LeakyReLU(0.2, inplace=True),
-                                    nn.Linear(1024,1))
-        # self.linear2 = nn.Linear(batch_size*patch_n,1)
+        self.conv4 = nn.Sequential(nn.Conv2d(4*self.inter_channel, 8*self.inter_channel, 3, 2, padding=1),
+                                    nn.BatchNorm2d(8*self.inter_channel),
+                                    nn.LeakyReLU(0.2, inplace=True))
+        self.output = nn.Sequential(nn.Flatten(),
+                                    nn.Sigmoid())
 
     def forward(self, input):
 
-        layer1 = self.layer1(input)
+        conv1 = self.conv1(input)
 
-        layer2 = self.layer2(layer1)
+        conv2 = self.conv2(conv1)
 
-        layer3 = self.layer3(layer2)
+        conv3 = self.conv3(conv2)
 
-        x = layer3.view(layer3.size(0),-1)
+        conv4 = self.conv4(conv3)
 
-        drop_out = self.drop_out(x)
+        output = self.output(conv4)
 
-        fc1 = self.fc_layer(drop_out)
-        
-        # x2 = fc1.flatten()
-
-        # fc2 = self.linear2(x2)
-
-        return fc1
+        return output
