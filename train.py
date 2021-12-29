@@ -89,7 +89,7 @@ if args.load_chkpt:
 	whole_model = torch.load(args.save_path+ 'latest_ckpt.pth.tar')
 	netG_state_dict,optG_state_dict = whole_model['netG_state_dict'], whole_model['optG_state_dict']
 	netD_state_dict,optD_state_dict = whole_model['netD_state_dict'], whole_model['optD_state_dict']
-	g_net = GNet(image_size)
+	g_net = GNet()
 	g_net = to_cuda(g_net)
 	d_net = DNet()
 	d_net = to_cuda(d_net)
@@ -109,7 +109,7 @@ else:
 	print('Training model from scrath')
 	g_net = GNet()
 	g_net = to_cuda(g_net)
-	d_net = DNet(args.batch_size, image_size, args.patch_n)
+	d_net = DNet()
 	d_net = to_cuda(d_net)
 	optimizer_generator = torch.optim.Adam(g_net.parameters(), lr=args.lr, betas=(0.5,0.9))
 	optimizer_discriminator = torch.optim.Adam(d_net.parameters(), lr=4*args.lr, betas=(0.5,0.9))
@@ -171,11 +171,11 @@ for epoch in tq_epoch:
 			y = y.view(-1, 1, shape_, shape_)
 
 		y = to_cuda(y)
-		# y = tanh_norm(y)
+		y_tan = tanh_norm(y)
 		x = to_cuda(x)
 
 		# Predictions
-		pred = g_net(x)
+		pred = g_net(x)		
 
 		for _ in range(5):
 			# Training discriminator
@@ -200,7 +200,7 @@ for epoch in tq_epoch:
 		g_net.zero_grad()
 		Dpred = d_net(pred)
 		Dg = criterion(Dpred, real)
-		gloss = Gloss(Dg, pred, y)
+		gloss = Gloss(Dg, pred, y_tan)
 		gloss.backward()
 		optimizer_generator.step()
 

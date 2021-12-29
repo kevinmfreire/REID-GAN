@@ -67,13 +67,10 @@ class GNet(nn.Module):
         return output
 
 class DNet(nn.Module):
-    def __init__(self, batch_size, patch_size, patch_n):
+    def __init__(self):
         super(DNet, self).__init__()
         self.input_channel = 1
         self.inter_channel = 128
-        self.size = (patch_size//8)**2
-        self.batch_size = batch_size
-        self.patch_n = patch_n
 
         self.conv1 = nn.Sequential(nn.Conv2d(self.input_channel, self.inter_channel, 3, 2, padding =1),
                                    nn.LeakyReLU(0.2, inplace=True))
