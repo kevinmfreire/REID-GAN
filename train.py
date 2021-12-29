@@ -191,8 +191,6 @@ for epoch in tq_epoch:
 			Dy = criterion(Dt, real)
 			Dg = criterion(Dp, fake)
 			dloss = Dloss(Dy,Dg)
-			print(dloss)
-			quit()
 			dloss.backward(retain_graph=True)
 			optimizer_discriminator.step()
 
