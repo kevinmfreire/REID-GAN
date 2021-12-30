@@ -43,13 +43,14 @@ parser.add_argument('--patch_size', type=int, default=120)	# default = 100
 parser.add_argument('--batch_size', type=int, default=10)	# default = 5
 parser.add_argument('--image_size', type=int, default=512)
 
-parser.add_argument('--lr', type=float, default=2e-4) # Defailt = 1e-3
+parser.add_argument('--lr', type=float, default=5e-5) # Defailt = 2e-4
 parser.add_argument('--num_epochs', type=int, default=500)
 parser.add_argument('--num_workers', type=int, default=4)
 parser.add_argument('--load_chkpt', type=bool, default=False)
 
 parser.add_argument('--norm_range_min', type=float, default=-1024.0)
 parser.add_argument('--norm_range_max', type=float, default=3071.0)
+parser.add_argument('--clip_value', type=float, default=0.01)
 
 args = parser.parse_args()
 
@@ -111,15 +112,16 @@ else:
 	g_net = to_cuda(g_net)
 	d_net = DNet()
 	d_net = to_cuda(d_net)
-	optimizer_generator = torch.optim.Adam(g_net.parameters(), lr=args.lr, betas=(0.5,0.9))
-	optimizer_discriminator = torch.optim.Adam(d_net.parameters(), lr=4*args.lr, betas=(0.5,0.9))
+	# optimizer_generator = torch.optim.Adam(g_net.parameters(), lr=args.lr, betas=(0.5,0.9))
+	# optimizer_discriminator = torch.optim.Adam(d_net.parameters(), lr=4*args.lr, betas=(0.5,0.9))
+	optimizer_generator = torch.optim.RMSprop(g_net.parameters(), lr=args.lr)
+	optimizer_discriminator = torch.optim.RMSprop(d_net.parameters(), lr=args.lr)
 	cur_epoch = 0
 	total_iters = 0
 	lr=args.lr
 
 # Losses
 Dloss = DLoss()
-criterion = nn.BCEWithLogitsLoss()
 # Dloss = to_cuda(Dloss)
 Gloss = GLoss()
 # Gloss = to_cuda(Gloss)
@@ -135,18 +137,7 @@ for epoch in tq_epoch:
 
 	# Initializing sum of losses for discriminator and generator
 	gloss_sum, dloss_sum, count = 0, 0, 0
-	
-	# Alteranating training between discriminator and generator
-	# train_gen = gen_count >= args.gan_alt
-	# if not train_gen:
-	# 	print(f"Training Discriminator {gen_count+1}")
-	# else:
-	# 	print(f"Training Generator  {gen_count - 1}")
-	# g_net.train(train_gen)
-	# d_net.train(not train_gen)
-	# gen_count += 1
-	# if gen_count == args.gan_alt*5 + args.gan_alt:
-	# 	gen_count = 0
+
 	d_net.train()
 	g_net.train()
 
@@ -171,7 +162,7 @@ for epoch in tq_epoch:
 			y = y.view(-1, 1, shape_, shape_)
 
 		y = to_cuda(y)
-		y_tan = tanh_norm(y)
+		y_tanh = tanh_norm(y)
 		x = to_cuda(x)
 
 		# Predictions
@@ -182,25 +173,19 @@ for epoch in tq_epoch:
 			d_net.parameters(True)
 			optimizer_discriminator.zero_grad()
 			d_net.zero_grad()
-			Dt = d_net(y)
-			Dp = d_net(pred)
-			real = torch.ones([Dt.size(0), Dt.size(1)], dtype=torch.float, device='cuda'if cuda_is_present else 'cpu')
-			fake = torch.zeros([Dt.size(0), Dt.size(1)], dtype=torch.float, device='cuda' if cuda_is_present else 'cpu')
-			# Dy = d_net(y)
-			# Dg = d_net(pred)
-			Dy = criterion(Dt, real)
-			Dg = criterion(Dp, fake)
+			Dy = d_net(y)
+			Dg = d_net(pred)
 			dloss = Dloss(Dy,Dg)
 			dloss.backward(retain_graph=True)
+			nn.utils.clip_grad_value_(d_net.parameters(), args.clip_value)
 			optimizer_discriminator.step()
 
 		# Training generator
 		d_net.parameters(False)
 		optimizer_generator.zero_grad()
 		g_net.zero_grad()
-		Dpred = d_net(pred)
-		Dg = criterion(Dpred, real)
-		gloss = Gloss(Dg, pred, y_tan)
+		Dg = d_net(pred)
+		gloss = Gloss(Dg, pred, y_tanh)
 		gloss.backward()
 		optimizer_generator.step()
 

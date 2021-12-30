@@ -28,8 +28,6 @@ def get_pixel_loss(target, prediction):
     N = B*C*H*W
     pixel_difference = target - prediction
     pixel_loss = pixel_difference.norm(p=2) / float(N)
-    # loss = nn.MSELoss()
-    # pixel_loss = loss(prediction, target)
     return pixel_loss
 
 # OBTAIN VGG16 PRETRAINED MODEL EXCLUDING FULLY CONNECTED LAYERS
@@ -49,8 +47,6 @@ def get_feature_loss(target,prediction):
     feature_count = C*W*H
     feature_difference = feature_transformed_prediction - feature_transformed_target
     feature_loss = feature_difference.norm(p=2) / float(feature_count)
-    # loss = nn.MSELoss()
-    # feature_loss = loss(feature_transformed_prediction, feature_transformed_target)
     return feature_loss
 
 def get_smooth_loss(image):
@@ -73,7 +69,7 @@ class DLoss(torch.nn.Module):
 
     def forward(self, Dy, Dg):
         # return -torch.mean(Dy) + torch.mean(Dg)
-        return -(torch.log(Dy) + torch.log(1.-Dg))
+        return -torch.mean(Dy) + torch.mean(Dg)
 
 class GLoss(torch.nn.Module):
     """
@@ -84,6 +80,6 @@ class GLoss(torch.nn.Module):
 
     def forward(self, Dg, pred, y):
         ADVERSARIAL_LOSS_FACTOR, PIXEL_LOSS_FACTOR, FEATURE_LOSS_FACTOR = 0.5, 0.1, 0.1
-        loss = ADVERSARIAL_LOSS_FACTOR * -torch.log(Dg) + PIXEL_LOSS_FACTOR * get_pixel_loss(y,pred) + \
+        loss = ADVERSARIAL_LOSS_FACTOR * -torch.mean(Dg) + PIXEL_LOSS_FACTOR * get_pixel_loss(y,pred) + \
 			FEATURE_LOSS_FACTOR * get_feature_loss(y,pred)
         return loss
