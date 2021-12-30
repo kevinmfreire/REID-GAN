@@ -162,11 +162,11 @@ for epoch in tq_epoch:
 			y = y.view(-1, 1, shape_, shape_)
 
 		y = to_cuda(y)
-		y_tanh = tanh_norm(y)
+		# y_tanh = tanh_norm(y)
 		x = to_cuda(x)
 
 		# Predictions
-		pred = g_net(x)		
+		pred = g_net(x)
 
 		for _ in range(5):
 			# Training discriminator
@@ -185,7 +185,7 @@ for epoch in tq_epoch:
 		optimizer_generator.zero_grad()
 		g_net.zero_grad()
 		Dg = d_net(pred)
-		gloss = Gloss(Dg, pred, y_tanh)
+		gloss = Gloss(Dg, pred, y)
 		gloss.backward()
 		optimizer_generator.step()
 

@@ -30,8 +30,7 @@ class GNet(nn.Module):
         self.deconv2 = nn.Sequential(nn.ConvTranspose2d(self.inter_channel*6, self.inter_channel*2, 4, 2, padding=1),
                                     nn.BatchNorm2d(self.inter_channel*2),
                                     nn.ReLU(inplace=True))
-        self.conv2 = nn.Sequential(nn.Conv2d(self.inter_channel*3, self.input_channel, 3, padding=1),
-                                    nn.Tanh())
+        self.conv2 = nn.Conv2d(self.inter_channel*3, self.input_channel, 3, padding=1)
     
     def forward(self, input):
 
@@ -62,7 +61,6 @@ class GNet(nn.Module):
         deconv2 = self.deconv2(torch.cat((layer1,deconv1),1))
 
         output = self.conv2(torch.cat((conv1,deconv2),1))
-
 
         return output
 
