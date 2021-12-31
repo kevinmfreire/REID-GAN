@@ -40,7 +40,7 @@ parser.add_argument('--transform', type=bool, default=False)
 # if patch training, batch size is (--patch_n * --batch_size)
 parser.add_argument('--patch_n', type=int, default=10)		# default = 4
 parser.add_argument('--patch_size', type=int, default=120)	# default = 100
-parser.add_argument('--batch_size', type=int, default=10)	# default = 5
+parser.add_argument('--batch_size', type=int, default=12)	# default = 5
 parser.add_argument('--image_size', type=int, default=512)
 
 parser.add_argument('--lr', type=float, default=5e-5) # Defailt = 2e-4
@@ -94,8 +94,8 @@ if args.load_chkpt:
 	g_net = to_cuda(g_net)
 	d_net = DNet()
 	d_net = to_cuda(d_net)
-	optimizer_generator = torch.optim.Adam(g_net.parameters())
-	optimizer_discriminator= torch.optim.Adam(d_net.parameters())
+	optimizer_generator = torch.optim.Adam(g_net.parameters(), lr=args.lr, betas=(0.5,0.9))
+	optimizer_discriminator = torch.optim.Adam(d_net.parameters(), lr=4*args.lr, betas=(0.5,0.9))
 	d_net.load_state_dict(netD_state_dict)
 	g_net.load_state_dict(netG_state_dict)
 	optimizer_generator.load_state_dict(optG_state_dict)
@@ -112,10 +112,10 @@ else:
 	g_net = to_cuda(g_net)
 	d_net = DNet()
 	d_net = to_cuda(d_net)
-	# optimizer_generator = torch.optim.Adam(g_net.parameters(), lr=args.lr, betas=(0.5,0.9))
-	# optimizer_discriminator = torch.optim.Adam(d_net.parameters(), lr=4*args.lr, betas=(0.5,0.9))
-	optimizer_generator = torch.optim.RMSprop(g_net.parameters(), lr=args.lr)
-	optimizer_discriminator = torch.optim.RMSprop(d_net.parameters(), lr=args.lr)
+	optimizer_generator = torch.optim.Adam(g_net.parameters(), lr=args.lr, betas=(0.5,0.9))
+	optimizer_discriminator = torch.optim.Adam(d_net.parameters(), lr=4*args.lr, betas=(0.5,0.9))
+	# optimizer_generator = torch.optim.RMSprop(g_net.parameters(), lr=args.lr)
+	# optimizer_discriminator = torch.optim.RMSprop(d_net.parameters(), lr=args.lr)
 	cur_epoch = 0
 	total_iters = 0
 	lr=args.lr
@@ -127,12 +127,9 @@ Gloss = GLoss()
 # Gloss = to_cuda(Gloss)
 
 losses = []
-train_dis = True
-torch.autograd.set_detect_anomaly(True)
-gen_count = 0
 start_time = time.time()
 tq_epoch = tqdm(range(cur_epoch, args.num_epochs),position=1, leave=True, desc='Epochs')
-# print("Training Discriminator")
+torch.autograd.set_detect_anomaly(True)
 for epoch in tq_epoch:
 
 	# Initializing sum of losses for discriminator and generator
@@ -177,7 +174,7 @@ for epoch in tq_epoch:
 			Dg = d_net(pred)
 			dloss = Dloss(Dy,Dg)
 			dloss.backward(retain_graph=True)
-			nn.utils.clip_grad_value_(d_net.parameters(), args.clip_value)
+			# nn.utils.clip_grad_value_(d_net.parameters(), args.clip_value)
 			optimizer_discriminator.step()
 
 		# Training generator
@@ -193,12 +190,12 @@ for epoch in tq_epoch:
 		gloss_sum += gloss.item()
 		
 		data_tqdm.set_postfix({'ITER': i+1, 'G_LOSS': '{:.5f}'.format(gloss.item()), 'D_LOSS': '{:.8f}'.format(dloss.item())})
-		if total_iters % args.decay_iters == 0:
-			lr = lr * 0.5
-			for param_group in optimizer_generator.param_groups:
-				param_group['lr'] = lr
-			for param_group in optimizer_discriminator.param_groups:
-				param_group['lr'] = 4*lr
+		# if total_iters % args.decay_iters == 0:
+		# 	lr = lr * 0.5
+		# 	for param_group in optimizer_generator.param_groups:
+		# 		param_group['lr'] = lr
+		# 	for param_group in optimizer_discriminator.param_groups:
+		# 		param_group['lr'] = 4*lr
 
 		# Saving model after every 10 iterations
 		if total_iters % args.save_iters == 0:

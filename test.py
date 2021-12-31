@@ -136,9 +136,7 @@ with torch.no_grad():
         pred = netG(x)
 
         # x = denormalize_(x)
-        print(pred.max())
-        print(pred.min())
-        pred = denormalize_tanh(pred)
+        # pred = denormalize_tanh(pred)
 
         # Reshaping pred for computing measurements
         x = x.view(shape_, shape_).cpu().detach()

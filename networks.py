@@ -83,11 +83,12 @@ class DNet(nn.Module):
                                     nn.LeakyReLU(0.2, inplace=True))
         self.conv5 = nn.Sequential(nn.Conv2d(8*self.inter_channel, 16*self.inter_channel, 3, 2, padding=1),
                                     nn.BatchNorm2d(16*self.inter_channel),
-                                    nn.LeakyReLU(0.2, inplace=True))
-        self.fc_layer = nn.Sequential(nn.Flatten(),
-                                    nn.Linear(4*4*1024, 1024),
-                                    nn.LeakyReLU(0.2, inplace=True),
-                                    nn.Linear(1024, 1))
+                                    nn.Sigmoid())
+                                    # nn.LeakyReLU(0.2, inplace=True))
+        # self.fc_layer = nn.Sequential(nn.Flatten(),
+        #                             nn.Linear(4*4*1024, 1024),
+        #                             nn.LeakyReLU(0.2, inplace=True),
+        #                             nn.Linear(1024, 1))
 
     def forward(self, input):
 
@@ -99,8 +100,8 @@ class DNet(nn.Module):
 
         conv4 = self.conv4(conv3)
 
-        conv5 = self.conv5(conv4)
+        output = self.conv5(conv4)
 
-        output = self.fc_layer(conv5)
+        # output = self.fc_layer(conv5)
 
         return output
