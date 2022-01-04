@@ -110,7 +110,7 @@ cuda_is_present = True if torch.cuda.is_available() else False
 Tensor = torch.cuda.FloatTensor if cuda_is_present else torch.FloatTensor
 
 # load   
-whole_model = torch.load(args.save_path + 'latest_ckpt_pre.pth.tar', map_location=torch.device('cuda' if cuda_is_present else 'cpu'))
+whole_model = torch.load(args.save_path + 'latest_ckpt.pth.tar', map_location=torch.device('cuda' if cuda_is_present else 'cpu'))
 netG_state_dict= whole_model['netG_state_dict']
 epoch = whole_model['epoch']
 netG = GNet()
@@ -168,7 +168,7 @@ with torch.no_grad():
         if args.result_fig:
             save_fig(x, y, pred, i, original_result, pred_result)
             # pred=normalize_(pred.numpy())
-            pred=torch.Tensor(pred)
+            # pred=torch.Tensor(pred)
             utils.save_image(pred, os.path.join(args.results_path, 'Pred_{}.png'.format(i)))
 
 quit()    

@@ -31,23 +31,33 @@ def get_pixel_loss(target, prediction):
     return pixel_loss
 
 # OBTAIN VGG16 PRETRAINED MODEL EXCLUDING FULLY CONNECTED LAYERS
-def get_feature_layer_vgg16(image):
+def get_feature_layer_vgg16(image, layer):
     image = torch.cat([image,image,image],1)
     vgg16 = models.vgg16(pretrained=True)
     vgg16 = to_cuda(vgg16)
-    return_layers = {'29': 'out_layer29'}
+    # return_layers = {'29': 'out_layer29'}
+    return_layers = {'{}'.format(layer): 'feat_layer_{}'.format(layer)}
     output_feature = IntermediateLayerGetter(vgg16.features, return_layers=return_layers)
     image_feature = output_feature(image)
-    return image_feature['out_layer29']
+    # return image_feature['out_layer29']
+    return image_feature['feat_layer_{}'.format(layer)]
 
-def get_feature_loss(target,prediction):
-    feature_transformed_target = get_feature_layer_vgg16(target)
-    feature_transformed_prediction = get_feature_layer_vgg16(prediction)
+def get_feature_loss(target, prediction, layer):
+    feature_transformed_target = get_feature_layer_vgg16(target, layer)
+    feature_transformed_prediction = get_feature_layer_vgg16(prediction, layer)
     _, C, H, W = feature_transformed_target.size()
     feature_count = C*W*H
     feature_difference = feature_transformed_prediction - feature_transformed_target
     feature_loss = feature_difference.norm(p=2) / float(feature_count)
     return feature_loss
+
+def multi_perceptual_loss(target, prediction):
+    multi_perceptual_loss = 0
+    vgg16_layers = [3, 8, 15, 22, 29]
+    for i in vgg16_layers:
+        feature_loss = get_feature_loss(target, prediction, i)
+        multi_perceptual_loss += feature_loss
+    return multi_perceptual_loss
 
 def get_smooth_loss(image):
     _, _ , image_height, image_width = image.size()
@@ -81,5 +91,5 @@ class GLoss(torch.nn.Module):
     def forward(self, Dg, pred, y):
         ADVERSARIAL_LOSS_FACTOR, PIXEL_LOSS_FACTOR, FEATURE_LOSS_FACTOR = 0.5, 1.0, 1.0
         loss = ADVERSARIAL_LOSS_FACTOR * -torch.mean(Dg) + PIXEL_LOSS_FACTOR * get_pixel_loss(y,pred) + \
-			FEATURE_LOSS_FACTOR * get_feature_loss(y,pred)
+			FEATURE_LOSS_FACTOR * multi_perceptual_loss(y,pred)
         return loss
