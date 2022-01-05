@@ -40,7 +40,7 @@ parser.add_argument('--transform', type=bool, default=False)
 # if patch training, batch size is (--patch_n * --batch_size)
 parser.add_argument('--patch_n', type=int, default=10)		# default = 4
 parser.add_argument('--patch_size', type=int, default=120)	# default = 100
-parser.add_argument('--batch_size', type=int, default=12)	# default = 5
+parser.add_argument('--batch_size', type=int, default=5)	# default = 5
 parser.add_argument('--image_size', type=int, default=512)
 
 parser.add_argument('--lr', type=float, default=5e-5) # Defailt = 2e-4
