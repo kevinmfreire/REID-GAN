@@ -114,17 +114,13 @@ else:
 	d_net = to_cuda(d_net)
 	optimizer_generator = torch.optim.Adam(g_net.parameters(), lr=args.lr, betas=(0.5,0.9))
 	optimizer_discriminator = torch.optim.Adam(d_net.parameters(), lr=4*args.lr, betas=(0.5,0.9))
-	# optimizer_generator = torch.optim.RMSprop(g_net.parameters(), lr=args.lr)
-	# optimizer_discriminator = torch.optim.RMSprop(d_net.parameters(), lr=args.lr)
 	cur_epoch = 0
 	total_iters = 0
 	lr=args.lr
 
 # Losses
 Dloss = DLoss()
-# Dloss = to_cuda(Dloss)
 Gloss = GLoss()
-# Gloss = to_cuda(Gloss)
 
 losses = []
 start_time = time.time()
@@ -159,7 +155,6 @@ for epoch in tq_epoch:
 			y = y.view(-1, 1, shape_, shape_)
 
 		y = to_cuda(y)
-		# y_tanh = tanh_norm(y)
 		x = to_cuda(x)
 
 		# Predictions
@@ -214,7 +209,7 @@ for epoch in tq_epoch:
 			}
 			# torch.save(saved_model, '{}iter_{}_ckpt.pth.tar'.format(args.save_path, total_iters))
 			torch.save(saved_model, '{}latest_ckpt.pth.tar'.format(args.save_path))
-			# save_model(saved_model, '{}latest_ckpt.pth.tar'.format(args.save_path))
+			# Saving to google drive due to training time limits in Google collab
 			cmd = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/deconv_model/'.format(args.save_path)
 			os.system(cmd)
 	

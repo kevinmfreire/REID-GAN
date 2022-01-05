@@ -35,11 +35,9 @@ def get_feature_layer_vgg16(image, layer):
     image = torch.cat([image,image,image],1)
     vgg16 = models.vgg16(pretrained=True)
     vgg16 = to_cuda(vgg16)
-    # return_layers = {'29': 'out_layer29'}
     return_layers = {'{}'.format(layer): 'feat_layer_{}'.format(layer)}
     output_feature = IntermediateLayerGetter(vgg16.features, return_layers=return_layers)
     image_feature = output_feature(image)
-    # return image_feature['out_layer29']
     return image_feature['feat_layer_{}'.format(layer)]
 
 def get_feature_loss(target, prediction, layer):
@@ -53,7 +51,7 @@ def get_feature_loss(target, prediction, layer):
 
 def multi_perceptual_loss(target, prediction):
     multi_perceptual_loss = 0
-    vgg16_layers = [3, 8, 15, 22, 29]
+    vgg16_layers = [3, 8, 15, 22, 29] # layers: 3, 8, 15, 22, 29
     for i in vgg16_layers:
         feature_loss = get_feature_loss(target, prediction, i)
         multi_perceptual_loss += feature_loss
@@ -78,7 +76,6 @@ class DLoss(torch.nn.Module):
         # self.weight = weight
 
     def forward(self, Dy, Dg):
-        # return -torch.mean(Dy) + torch.mean(Dg)
         return -torch.mean(Dy) + torch.mean(Dg)
 
 class GLoss(torch.nn.Module):
