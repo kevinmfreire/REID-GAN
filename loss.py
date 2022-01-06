@@ -24,8 +24,8 @@ def create_window(window_size, channel):
     return  window # window.cuda()
 
 def get_pixel_loss(target, prediction):
-    B, C, H, W = target.size()
-    N = B*C*H*W
+    _, C, H, W = target.size()
+    N = C*H*W
     pixel_difference = target - prediction
     pixel_loss = pixel_difference.norm(p=2) / float(N)
     return pixel_loss
