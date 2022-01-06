@@ -36,7 +36,7 @@ def compute_PSNR(img1, img2, data_range):
 
 def compute_CNR(img1,img2):
     if type(img1) == torch.Tensor:
-        C = torch.mean(img1) - torch.mean(img2)
+        C = torch.mean(img1, unbiased=False) - torch.mean(img2, unbiased=False)
         N = torch.std(img2)
         CNR = C/N
         return CNR.item()
