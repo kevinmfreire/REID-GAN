@@ -90,7 +90,7 @@ class NCMSE(nn.Module):
         super(NCMSE, self).__init__()
         self.std=STD()
     def forward(self, out_image, gt_image, org_image):
-        loss = torch.mean(torch.mul(self.std(org_image - gt_image), (out_image - gt_image))) 
+        loss = torch.mean(torch.mul(self.std(gt_image - org_image), (gt_image - out_image))) 
         return loss
 
 class DLoss(torch.nn.Module):
