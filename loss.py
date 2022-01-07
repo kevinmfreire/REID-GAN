@@ -21,7 +21,7 @@ def create_window(window_size, channel):
     _1D_window = gaussian(window_size, 3.5).unsqueeze(1)
     _2D_window =_1D_window.mm(_1D_window.t()).float().unsqueeze(0).unsqueeze(0)
     window = Variable(_2D_window.expand(channel, 1, window_size, window_size).contiguous())
-    return  window # window.cuda()
+    return  to_cuda(window)
 
 def get_pixel_loss(target, prediction):
     _, C, H, W = target.size()
@@ -67,6 +67,32 @@ def get_smooth_loss(image):
     smooth_loss = get_pixel_loss(horizontal_normal, horizontal_one_right) + get_pixel_loss(vertical_normal, vertical_one_right) 
     return smooth_loss
 
+class STD(torch.nn.Module):
+    def __init__(self, window_size = 5):
+        super(STD, self).__init__()
+        self.window_size = window_size
+        self.channel=1
+        self.softmax = torch.nn.LogSoftmax(dim=1)
+        self.window=create_window(self.window_size, self.channel)
+        self.window.to(torch.device('cuda' if cuda_is_present else 'cpu'))
+    def forward(self, img):
+        mu = F.conv2d(img, self.window, padding = self.window_size//2, groups = self.channel)
+        mu_sq=mu.pow(2)
+        sigma_sq = F.conv2d(img*img, self.window, padding = self.window_size//2, groups = self.channel) - mu_sq
+        B,C,W,H=sigma_sq.shape
+        sigma_sq=torch.flatten(sigma_sq, start_dim=1)
+        noise_map = self.softmax(sigma_sq)
+        noise_map=torch.reshape(noise_map,[B,C,W,H])
+        return noise_map
+
+class NCMSE(nn.Module):
+    def __init__(self):
+        super(NCMSE, self).__init__()
+        self.std=STD()
+    def forward(self, out_image, gt_image, org_image):
+        loss = torch.mean(torch.mul(self.std(org_image - gt_image), (out_image - gt_image))) 
+        return loss
+
 class DLoss(torch.nn.Module):
     """
     The loss for discriminator
@@ -87,6 +113,5 @@ class GLoss(torch.nn.Module):
 
     def forward(self, Dg, pred, y):
         ADVERSARIAL_LOSS_FACTOR, PIXEL_LOSS_FACTOR, FEATURE_LOSS_FACTOR = 0.5, 1.0, 1.0
-        loss = ADVERSARIAL_LOSS_FACTOR * -torch.mean(Dg) + PIXEL_LOSS_FACTOR * get_pixel_loss(y,pred) + \
-			FEATURE_LOSS_FACTOR * multi_perceptual_loss(y,pred)
+        loss = ADVERSARIAL_LOSS_FACTOR * -torch.mean(Dg) + FEATURE_LOSS_FACTOR * multi_perceptual_loss(y,pred) # PIXEL_LOSS_FACTOR * get_pixel_loss(y,pred) + \
         return loss

@@ -46,7 +46,7 @@ parser.add_argument('--image_size', type=int, default=512)
 parser.add_argument('--lr', type=float, default=5e-5) # Defailt = 2e-4
 parser.add_argument('--num_epochs', type=int, default=500)
 parser.add_argument('--num_workers', type=int, default=4)
-parser.add_argument('--load_chkpt', type=bool, default=False)
+parser.add_argument('--load_chkpt', type=bool, default=True)
 
 parser.add_argument('--norm_range_min', type=float, default=-1024.0)
 parser.add_argument('--norm_range_max', type=float, default=3071.0)
@@ -69,25 +69,13 @@ cuda_is_present = True if torch.cuda.is_available() else False
 Tensor = torch.cuda.FloatTensor if cuda_is_present else torch.FloatTensor
 
 def to_cuda(data):
-		return data.cuda() if cuda_is_present else data
-
-def denormalize_(image):
-	image = image * (args.norm_range_max - args.norm_range_min) + args.norm_range_min
-	return image
-
-def normalize_(image):
-	image = (image - args.norm_range_min) / (args.norm_range_max - args.norm_range_min)
-	return image
-
-def tanh_norm(image):
-	image = 2*normalize_(image)-1
-	return image
+	return data.cuda() if cuda_is_present else data
 
 image_size = args.image_size if args.patch_size == None else args.patch_size
 
 if args.load_chkpt:
 	print('Loading Chekpoint')
-	whole_model = torch.load(args.save_path+ 'latest_ckpt.pth.tar')
+	whole_model = torch.load(args.save_path+ 'latest_ckpt.pth.tar', map_location=torch.device('cuda' if cuda_is_present else 'cpu'))
 	netG_state_dict,optG_state_dict = whole_model['netG_state_dict'], whole_model['optG_state_dict']
 	netD_state_dict,optD_state_dict = whole_model['netD_state_dict'], whole_model['optD_state_dict']
 	g_net = GNet()
@@ -121,6 +109,8 @@ else:
 # Losses
 Dloss = DLoss()
 Gloss = GLoss()
+criterion = NCMSE()
+criterion = to_cuda(criterion)
 
 losses = []
 start_time = time.time()
@@ -177,7 +167,9 @@ for epoch in tq_epoch:
 		optimizer_generator.zero_grad()
 		g_net.zero_grad()
 		Dg = d_net(pred)
-		gloss = Gloss(Dg, pred, y)
+		rloss = criterion(pred, y, x)
+		g_loss = Gloss(Dg, pred, y)
+		gloss = g_loss + 0.001*rloss
 		gloss.backward()
 		optimizer_generator.step()
 
