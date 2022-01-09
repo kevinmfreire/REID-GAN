@@ -18,7 +18,7 @@ def gaussian(window_size, sigma):
     return gauss/gauss.sum()
 
 def create_window(window_size, channel):
-    _1D_window = gaussian(window_size, 3.5).unsqueeze(1)
+    _1D_window = gaussian(window_size, 1.5).unsqueeze(1)
     _2D_window =_1D_window.mm(_1D_window.t()).float().unsqueeze(0).unsqueeze(0)
     window = Variable(_2D_window.expand(channel, 1, window_size, window_size).contiguous())
     return  to_cuda(window)
@@ -67,6 +67,11 @@ def get_smooth_loss(image):
     smooth_loss = get_pixel_loss(horizontal_normal, horizontal_one_right) + get_pixel_loss(vertical_normal, vertical_one_right) 
     return smooth_loss
 
+# def get_ncmse_loss(pred, y, x):
+#     org_noise = y - x
+#     gen_noise = pred - x
+#     loss = get_pixel_loss
+
 class STD(torch.nn.Module):
     def __init__(self, window_size = 5):
         super(STD, self).__init__()
@@ -90,7 +95,9 @@ class NCMSE(nn.Module):
         super(NCMSE, self).__init__()
         self.std=STD()
     def forward(self, out_image, gt_image, org_image):
-        loss = torch.mean(torch.mul(self.std(gt_image - org_image), (gt_image - out_image))) 
+        _, C, H, W = out_image.size()
+        N = C*H*W
+        loss = -torch.mean(torch.mul(self.std(org_image - gt_image), torch.pow(out_image - gt_image, 2)))  / float(N) 
         return loss
 
 class DLoss(torch.nn.Module):
