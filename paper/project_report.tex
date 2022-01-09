@@ -39,7 +39,7 @@ Generative Adversarial Network was first introduced in 2014 by Goodfellow \emph{
 	\begin{enumerate}
 		\item We built a GAN architecture similar to Alsaiari \emph{et al}. \cite{alsaiari2019image}. with the exception of training it specifically on LDCT images.
 		\item Computed similar loss functions as \cite{alsaiari2019image}, with the exception of using the Mean Squared Error Loss function instead of computing L2-norm.
-		\item Present the output results of the network after training.\\
+		\item Present the output results of the network after training.
 	\end{enumerate}
 	
  The remainder of this paper is organized as followed.  The proposed method based on \cite{alsaiari2019image}, with perceptual loss, pixel-pixel loss, smooth loss and adversarial loss are presented in \ref{method}.  Then, experiments and analysis of the results are presented in section \ref{experiment settings} and \ref{results and discussion}.  Lastly, Section \ref{conclusion} gives a summary of this paper and looks forward to some possible future research directions.
@@ -104,7 +104,7 @@ The goal of a single image denoising is to generate a realistic image with high 
 
 \begin{figure*}[th!]
     \centering
-    \includegraphics[width=12cm]{discriminator}
+    \includegraphics[width=10cm]{discriminator}
     \caption{Discriminator Network Architecture}
     \label{discriminator}
 \end{figure*}
@@ -205,7 +205,8 @@ Moreover, we used three different metrics to compare which include the root mean
 % CONCLUSION
 \section{Conclusion}
 \label{conclusion}
-The denoising network is an end-to-end operation, in which the input is a low dose CT Scans and the output is a high dose CT scan.  The results we obtained were not as comparable as the papers we have referenced due to small tweaking of the networks we have done, but the general concept still remains.  This network needs to be fine tuned as well as tested on other images that are not CT scans and see its performance.  We also would like to explore using newer VGG models and different Loss functions to observe results.  
+The denoising network is an end-to-end operation, in which the input is a low dose CT Scans and the output is a high dose CT scan.  The results we obtained were not as comparable as the papers we have referenced due to small tweaking of the networks we have done, but the general concept still remains.  This network needs to be fine tuned as well as tested on other images that are not CT scans and see its performance.  We also would like to explore using newer VGG models and different Loss functions to observe results.\\
+This projected workload was evenly distributed between team members which includes the software, presentation and the final report.  For all of these components, each team member implemented half of each task and reviewed each others work.  The revisions were done by the respective team members based on feedback given.  
 
 % REFERENCES
 \bibliography{project_reference}
