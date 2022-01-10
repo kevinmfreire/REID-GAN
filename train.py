@@ -75,7 +75,7 @@ image_size = args.image_size if args.patch_size == None else args.patch_size
 
 if args.load_chkpt:
 	print('Loading Chekpoint')
-	whole_model = torch.load(args.save_path+ 'latest_ckpt.pth (3).tar', map_location=torch.device('cuda' if cuda_is_present else 'cpu'))
+	whole_model = torch.load(args.save_path+ 'latest_ckpt.pth.tar', map_location=torch.device('cuda' if cuda_is_present else 'cpu'))
 	netG_state_dict,optG_state_dict = whole_model['netG_state_dict'], whole_model['optG_state_dict']
 	netD_state_dict,optD_state_dict = whole_model['netD_state_dict'], whole_model['optD_state_dict']
 	g_net = GNet()
