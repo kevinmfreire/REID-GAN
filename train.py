@@ -199,7 +199,6 @@ for epoch in tq_epoch:
 				'lr': lr,
 				'total_iters': total_iters
 			}
-			# torch.save(saved_model, '{}iter_{}_ckpt.pth.tar'.format(args.save_path, total_iters))
 			torch.save(saved_model, '{}latest_ckpt.pth.tar'.format(args.save_path))
 			# Saving to google drive due to training time limits in Google collab
 			cmd = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/deconv_model/'.format(args.save_path)
