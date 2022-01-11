@@ -169,7 +169,7 @@ for epoch in tq_epoch:
 		rloss = criterion(pred, y, x)
 		mp_loss = multi_perceptual(y, pred)
 		g_loss = Gloss(Dg, pred, y)
-		gloss = g_loss + 0.1 * mp_loss + rloss
+		gloss = g_loss + mp_loss + rloss
 		gloss.backward()
 		optimizer_generator.step()
 
