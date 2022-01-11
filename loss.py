@@ -87,7 +87,7 @@ class NCMSE(nn.Module):
     def forward(self, out_image, gt_image, org_image):
         _, C, H, W = out_image.size()
         N = C*H*W
-        loss = -torch.mean(torch.mul(self.std(org_image - gt_image), torch.pow(out_image - gt_image, 2)))  / float(N) 
+        loss = -torch.mean(torch.mul(self.std(org_image - gt_image), torch.pow(out_image - gt_image, 2))) / float(N) 
         return loss
 
 class MPL(torch.nn.Module):
@@ -118,7 +118,6 @@ class DLoss(torch.nn.Module):
     def __init__(self):
         super(DLoss, self).__init__()
         # self.weight = weight
-
     def forward(self, Dy, Dg):
         return -torch.mean(Dy) + torch.mean(Dg)
 
@@ -128,7 +127,6 @@ class GLoss(torch.nn.Module):
     """
     def __init__(self):
         super(GLoss, self).__init__()
-
     def forward(self, Dg, pred, y):
         ADVERSARIAL_LOSS_FACTOR, PIXEL_LOSS_FACTOR = 0.5, 1.0
         loss = ADVERSARIAL_LOSS_FACTOR * -torch.mean(Dg) # PIXEL_LOSS_FACTOR * mse_loss(y,pred)
