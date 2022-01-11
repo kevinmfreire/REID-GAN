@@ -50,7 +50,6 @@ parser.add_argument('--load_chkpt', type=bool, default=True)
 
 parser.add_argument('--norm_range_min', type=float, default=-1024.0)
 parser.add_argument('--norm_range_max', type=float, default=3071.0)
-parser.add_argument('--clip_value', type=float, default=0.01)
 
 args = parser.parse_args()
 
@@ -111,6 +110,7 @@ Dloss = DLoss()
 Gloss = GLoss()
 criterion = NCMSE()
 criterion = to_cuda(criterion)
+multi_perceptual = MPL()
 
 losses = []
 start_time = time.time()
@@ -159,7 +159,6 @@ for epoch in tq_epoch:
 			Dg = d_net(pred)
 			dloss = Dloss(Dy,Dg)
 			dloss.backward(retain_graph=True)
-			# nn.utils.clip_grad_value_(d_net.parameters(), args.clip_value)
 			optimizer_discriminator.step()
 
 		# Training generator
@@ -168,8 +167,9 @@ for epoch in tq_epoch:
 		g_net.zero_grad()
 		Dg = d_net(pred)
 		rloss = criterion(pred, y, x)
+		mp_loss = multi_perceptual(y, pred)
 		g_loss = Gloss(Dg, pred, y)
-		gloss = g_loss + 0.1*rloss
+		gloss = g_loss + 0.1 * mp_loss + rloss
 		gloss.backward()
 		optimizer_generator.step()
 
@@ -207,16 +207,31 @@ for epoch in tq_epoch:
 	# Calculating average loss
 	avg_dloss = dloss_sum/float(count)
 	avg_gloss = gloss_sum/float(count)
+	losses.append((avg_gloss, avg_dloss))
+
+	# Saving to google drive
+	save_loss = '/gdrive/MyDrive/deconv_model/loss_arr.npy'
+	np.save(save_loss, losses, allow_pickle=True)
+
+	# Visualizing the average losses at every epoch
+	# losses = np.array(losses)
+	# plt.plot(losses.T[0], label='Generator')
+	# plt.plot(losses.T[1], label='Discriminator')
+	# plt.title("Training Losses")
+	# plt.xlabel("Epoch")
+	# plt.ylabel("Loss")
+	# plt.legend()
+	# plt.savefig('{}loss_plot.png'.format(args.save_path))
+
+	# Saving figure to google drive after every epoch
+	# save_loss = 'cp {}loss_plot.png /gdrive/MyDrive/deconv_model/'.format(args.save_path)
+	# os.system(save_loss)
 	
-	# print("STEP [{}], EPOCH [{}/{}], ITER [{}/{}] \nAVG_G_LOSS: {:.8f}, AVG_D_LOSS: {:.14f}, TIME: {:.1f}s".format(total_iters, epoch, 
-	# 																									args.num_epochs, i+1, 
-	# 																									len(data_loader), avg_gloss, avg_dloss
-	# 																									,time.time() - start_time))
 	tq_epoch.set_postfix({'STEP': total_iters,'AVG_G_LOSS': '{:.5f}'.format(avg_gloss), 'AVG_D_LOSS': '{:.8f}'.format(avg_dloss)})
+	
 	# Saving model after every 10 epoch
 	if epoch % 10 == 0:
 		cmd1 = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/deconv_model/epoch_{}_ckpt.pth.tar'.format(args.save_path, epoch)
 		cmd2 = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/deconv_model/'.format(args.save_path)
 		os.system(cmd1)
 		os.system(cmd2)
-	losses.append((gloss.item(), dloss.item()))

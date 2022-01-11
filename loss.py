@@ -23,7 +23,7 @@ def create_window(window_size, channel):
     window = Variable(_2D_window.expand(channel, 1, window_size, window_size).contiguous())
     return  to_cuda(window)
 
-def get_pixel_loss(target, prediction):
+def mse_loss(target, prediction):
     _, C, H, W = target.size()
     N = C*H*W
     pixel_difference = target - prediction
@@ -31,31 +31,21 @@ def get_pixel_loss(target, prediction):
     return pixel_loss
 
 # OBTAIN VGG16 PRETRAINED MODEL EXCLUDING FULLY CONNECTED LAYERS
-def get_feature_layer_vgg16(image, layer):
+def get_feature_layer_vgg16(image, layer, model):
     image = torch.cat([image,image,image],1)
-    vgg16 = models.vgg16(pretrained=True)
-    vgg16 = to_cuda(vgg16)
     return_layers = {'{}'.format(layer): 'feat_layer_{}'.format(layer)}
-    output_feature = IntermediateLayerGetter(vgg16.features, return_layers=return_layers)
+    output_feature = IntermediateLayerGetter(model.features, return_layers=return_layers)
     image_feature = output_feature(image)
     return image_feature['feat_layer_{}'.format(layer)]
 
-def get_feature_loss(target, prediction, layer):
-    feature_transformed_target = get_feature_layer_vgg16(target, layer)
-    feature_transformed_prediction = get_feature_layer_vgg16(prediction, layer)
+def get_feature_loss(target, prediction, layer, model):
+    feature_transformed_target = get_feature_layer_vgg16(target, layer, model)
+    feature_transformed_prediction = get_feature_layer_vgg16(prediction, layer, model)
     _, C, H, W = feature_transformed_target.size()
     feature_count = C*W*H
     feature_difference = feature_transformed_prediction - feature_transformed_target
     feature_loss = feature_difference.norm(p=2) / float(feature_count)
     return feature_loss
-
-def multi_perceptual_loss(target, prediction):
-    multi_perceptual_loss = 0
-    vgg16_layers = [3, 8, 15, 22, 29] # layers: 3, 8, 15, 22, 29
-    for i in vgg16_layers:
-        feature_loss = get_feature_loss(target, prediction, i)
-        multi_perceptual_loss += feature_loss
-    return multi_perceptual_loss
 
 def get_smooth_loss(image):
     _, _ , image_height, image_width = image.size()
@@ -64,13 +54,8 @@ def get_smooth_loss(image):
     vertical_normal = image[:, :, 0:image_height-1, :]
     vertical_one_right = image[:, :, 1:image_height, :]
     # smooth_loss = torch.sum(torch.pow(horizontal_normal-horizontal_one_right, 2)) / 2.0 + torch.sum(torch.pow(vertical_normal - vertical_one_right, 2)) / 2.0
-    smooth_loss = get_pixel_loss(horizontal_normal, horizontal_one_right) + get_pixel_loss(vertical_normal, vertical_one_right) 
+    smooth_loss = mse_loss(horizontal_normal, horizontal_one_right) + mse_loss(vertical_normal, vertical_one_right) 
     return smooth_loss
-
-# def get_ncmse_loss(pred, y, x):
-#     org_noise = y - x
-#     gen_noise = pred - x
-#     loss = get_pixel_loss
 
 class STD(torch.nn.Module):
     def __init__(self, window_size = 5):
@@ -85,12 +70,17 @@ class STD(torch.nn.Module):
         mu_sq=mu.pow(2)
         sigma_sq = F.conv2d(img*img, self.window, padding = self.window_size//2, groups = self.channel) - mu_sq
         B,C,W,H=sigma_sq.shape
+        sigma_sq = torch.sqrt(sigma_sq)
         sigma_sq=torch.flatten(sigma_sq, start_dim=1)
         noise_map = self.softmax(sigma_sq)
         noise_map=torch.reshape(noise_map,[B,C,W,H])
         return noise_map
 
 class NCMSE(nn.Module):
+    # Noise Concious MSE Loss referred from https://github.com/reach2sbera/ldct_nonlocal
+    """
+    The Noise Conscious MSE Loss 
+    """
     def __init__(self):
         super(NCMSE, self).__init__()
         self.std=STD()
@@ -99,6 +89,27 @@ class NCMSE(nn.Module):
         N = C*H*W
         loss = -torch.mean(torch.mul(self.std(org_image - gt_image), torch.pow(out_image - gt_image, 2)))  / float(N) 
         return loss
+
+class MPL(torch.nn.Module):
+    """
+    The Multi Perceptual Loss Function
+    """
+    def __init__(self):
+        super(MPL, self).__init__()
+        self.model = models.vgg16(pretrained=True)
+        self.model.to(torch.device('cuda' if cuda_is_present else 'cpu'))
+    def forward(self, target, prediction):
+        perceptual_loss = 0
+        vgg16_layers = [3, 8, 15, 22, 29] # layers: 3, 8, 15, 22, 29
+        for layer in vgg16_layers:
+            feature_target = get_feature_layer_vgg16(target, layer, self.model)
+            feature_prediction = get_feature_layer_vgg16(prediction, layer, self.model)
+            _, C, H, W = feature_target.size()
+            feature_count = C*W*H
+            feature_difference = feature_target - feature_prediction
+            feature_loss = feature_difference.norm(p=2) / float(feature_count)
+            perceptual_loss += feature_loss
+        return perceptual_loss
 
 class DLoss(torch.nn.Module):
     """
@@ -119,6 +130,6 @@ class GLoss(torch.nn.Module):
         super(GLoss, self).__init__()
 
     def forward(self, Dg, pred, y):
-        ADVERSARIAL_LOSS_FACTOR, PIXEL_LOSS_FACTOR, FEATURE_LOSS_FACTOR = 0.5, 1.0, 1.0
-        loss = ADVERSARIAL_LOSS_FACTOR * -torch.mean(Dg) + FEATURE_LOSS_FACTOR * multi_perceptual_loss(y,pred) # PIXEL_LOSS_FACTOR * get_pixel_loss(y,pred) + \
+        ADVERSARIAL_LOSS_FACTOR, PIXEL_LOSS_FACTOR = 0.5, 1.0
+        loss = ADVERSARIAL_LOSS_FACTOR * -torch.mean(Dg) # PIXEL_LOSS_FACTOR * mse_loss(y,pred)
         return loss
