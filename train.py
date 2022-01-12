@@ -151,16 +151,16 @@ for epoch in tq_epoch:
 		# Predictions
 		pred = g_net(x)
 
-		# for _ in range(5):
-		# 	# Training discriminator
-		# 	d_net.parameters(True)
-		# 	optimizer_discriminator.zero_grad()
-		# 	d_net.zero_grad()
-		# 	Dy = d_net(y)
-		# 	Dg = d_net(pred)
-		# 	dloss = Dloss(Dy,Dg)
-		# 	dloss.backward(retain_graph=True)
-		# 	optimizer_discriminator.step()
+		for _ in range(5):
+			# Training discriminator
+			d_net.parameters(True)
+			optimizer_discriminator.zero_grad()
+			d_net.zero_grad()
+			Dy = d_net(y)
+			Dg = d_net(pred)
+			dloss = Dloss(Dy,Dg)
+			dloss.backward(retain_graph=True)
+			optimizer_discriminator.step()
 
 		# Training generator
 		d_net.parameters(False)
