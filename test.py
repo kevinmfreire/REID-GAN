@@ -136,9 +136,9 @@ with torch.no_grad():
 
         # Computing Measures
         # data_range = args.trunc_max - args.trunc_min
-        data_range = args.norm_range_max - args.norm_range_min
+        # data_range = args.norm_range_max - args.norm_range_min
+        data_range = y.max() - y.min()
 
-        # original_result, pred_result = compute_measure(input, target, pred, data_range)
         original_result, pred_result = compute_measure(x, y, pred, data_range)
 
         ori_psnr_avg += original_result[0]
@@ -156,7 +156,7 @@ with torch.no_grad():
         if args.result_fig:
             save_fig(x, y, pred, i, original_result, pred_result)
             # pred=normalize_(pred.numpy())
-            # pred=torch.Tensor(pred)
+            pred=torch.Tensor(pred)
             utils.save_image(pred, os.path.join(args.results_path, 'Pred_{}.png'.format(i)))
 
 quit()    

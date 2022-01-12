@@ -111,6 +111,7 @@ Gloss = GLoss()
 criterion = NCMSE()
 criterion = to_cuda(criterion)
 multi_perceptual = MPL()
+ssim = SSIM()
 
 losses = []
 start_time = time.time()
@@ -166,10 +167,11 @@ for epoch in tq_epoch:
 		optimizer_generator.zero_grad()
 		g_net.zero_grad()
 		Dg = d_net(pred)
-		rloss = criterion(pred, y, x)
+		ssim_loss = ssim(y, x, pred)
+		# rloss = criterion(pred, y, x)
 		mp_loss = multi_perceptual(y, pred)
 		g_loss = Gloss(Dg, pred, y)
-		gloss = g_loss + mp_loss + rloss
+		gloss = g_loss + mp_loss + 100.0*ssim_loss
 		gloss.backward()
 		optimizer_generator.step()
 
