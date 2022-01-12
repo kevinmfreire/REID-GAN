@@ -151,27 +151,27 @@ for epoch in tq_epoch:
 		# Predictions
 		pred = g_net(x)
 
-		for _ in range(5):
-			# Training discriminator
-			d_net.parameters(True)
-			optimizer_discriminator.zero_grad()
-			d_net.zero_grad()
-			Dy = d_net(y)
-			Dg = d_net(pred)
-			dloss = Dloss(Dy,Dg)
-			dloss.backward(retain_graph=True)
-			optimizer_discriminator.step()
+		# for _ in range(5):
+		# 	# Training discriminator
+		# 	d_net.parameters(True)
+		# 	optimizer_discriminator.zero_grad()
+		# 	d_net.zero_grad()
+		# 	Dy = d_net(y)
+		# 	Dg = d_net(pred)
+		# 	dloss = Dloss(Dy,Dg)
+		# 	dloss.backward(retain_graph=True)
+		# 	optimizer_discriminator.step()
 
 		# Training generator
 		d_net.parameters(False)
 		optimizer_generator.zero_grad()
 		g_net.zero_grad()
 		Dg = d_net(pred)
-		ssim_loss = ssim(y, x, pred)
+		ssim_loss = -ssim(y, x, pred)
 		# rloss = criterion(pred, y, x)
 		mp_loss = multi_perceptual(y, pred)
 		g_loss = Gloss(Dg, pred, y)
-		gloss = g_loss + mp_loss + 100.0*ssim_loss
+		gloss = g_loss + mp_loss + 10.0*ssim_loss
 		gloss.backward()
 		optimizer_generator.step()
 

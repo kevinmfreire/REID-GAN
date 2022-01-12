@@ -81,8 +81,8 @@ def compute_SSIM(img1, img2, data_range, window_size, channel, size_average=True
     sigma2_sq = F.conv2d(img2*img2, window, padding=window_size//2) - mu2_sq
     sigma12 = F.conv2d(img1*img2, window, padding=window_size//2) - mu1_mu2
 
-    C1, C2 = (0.01*data_range)**2, (0.03*data_range)**2
-    # C1, C2 = 0.01**2, 0.03**2
+    # C1, C2 = (0.01*data_range)**2, (0.03*data_range)**2
+    C1, C2 = 0.01**2, 0.03**2
 
     ssim_map = ((2*mu1_mu2+C1)*(2*sigma12+C2)) / ((mu1_sq+mu2_sq+C1)*(sigma1_sq+sigma2_sq+C2))
 
@@ -156,7 +156,7 @@ class SSIM(torch.nn.Module):
         self.window.to(torch.device('cuda' if cuda_is_present else 'cpu'))
     def forward(self, y, x, pred):
         data_range = y.max() - y.min()
-        return 1-compute_SSIM(x-y, x-pred, data_range, self.window_size, self.channel, self.size_average)
+        return compute_SSIM(x-y, x-pred, data_range, self.window_size, self.channel, self.size_average)
 
 class DLoss(torch.nn.Module):
     """
