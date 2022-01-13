@@ -43,7 +43,7 @@ parser.add_argument('--patch_size', type=int, default=120)	# default = 100
 parser.add_argument('--batch_size', type=int, default=5)	# default = 5
 parser.add_argument('--image_size', type=int, default=512)
 
-parser.add_argument('--lr', type=float, default=5e-5) # Defailt = 2e-4
+parser.add_argument('--lr', type=float, default=2e-4) # 5e-5 without decaying rate
 parser.add_argument('--num_epochs', type=int, default=500)
 parser.add_argument('--num_workers', type=int, default=4)
 parser.add_argument('--load_chkpt', type=bool, default=False)
@@ -171,7 +171,7 @@ for epoch in tq_epoch:
 		rloss = criterion(pred, y, x)
 		mp_loss = multi_perceptual(y, pred)
 		g_loss = Gloss(Dg, pred, y)
-		gloss = g_loss + 0.1*mp_loss + 10.0*ssim_loss + 0.01*rloss
+		gloss = g_loss + 0.1*mp_loss + ssim_loss + 0.01*rloss
 		gloss.backward()
 		optimizer_generator.step()
 
@@ -179,12 +179,12 @@ for epoch in tq_epoch:
 		gloss_sum += gloss.item()
 		
 		data_tqdm.set_postfix({'ITER': i+1, 'G_LOSS': '{:.5f}'.format(gloss.item()), 'D_LOSS': '{:.8f}'.format(dloss.item())})
-		# if total_iters % args.decay_iters == 0:
-		# 	lr = lr * 0.5
-		# 	for param_group in optimizer_generator.param_groups:
-		# 		param_group['lr'] = lr
-		# 	for param_group in optimizer_discriminator.param_groups:
-		# 		param_group['lr'] = 4*lr
+		if total_iters % args.decay_iters == 0:
+			lr = lr * 0.5
+			for param_group in optimizer_generator.param_groups:
+				param_group['lr'] = lr
+			for param_group in optimizer_discriminator.param_groups:
+				param_group['lr'] = 4*lr
 
 		# Saving model after every 10 iterations
 		if total_iters % args.save_iters == 0:
