@@ -65,13 +65,13 @@ def denormalize_(image):
     image = image * (args.norm_range_max - args.norm_range_min) + args.norm_range_min
     return image
 
-# def normalize_(image, MIN_B=-160.0, MAX_B=240.0):
-#     image = (image - MIN_B) / (MAX_B - MIN_B)
-#     return image
-
-def normalize_(image):
-    image = (image - args.norm_range_min) / (args.norm_range_max - args.norm_range_min)
+def normalize_(image, MIN_B=-160.0, MAX_B=240.0):
+    image = (image - MIN_B) / (MAX_B - MIN_B)
     return image
+
+# def normalize_(image):
+#     image = (image - args.norm_range_min) / (args.norm_range_max - args.norm_range_min)
+#     return image
 
 def trunc(mat):
     mat[mat <= args.trunc_min] = args.trunc_min
@@ -127,17 +127,17 @@ with torch.no_grad():
         pred = netG(x)
 
         # Reshaping pred for computing measurements
-        x = x.view(shape_, shape_).cpu().detach()
-        y = y.view(shape_, shape_).cpu().detach()
-        pred = pred.view(shape_, shape_).cpu().detach()
-        # x = trunc(denormalize_(x.view(shape_, shape_).cpu().detach()))
-        # y = trunc(denormalize_(y.view(shape_, shape_).cpu().detach()))
-        # pred = trunc(denormalize_(pred.view(shape_, shape_).cpu().detach()))
+        # x = x.view(shape_, shape_).cpu().detach()
+        # y = y.view(shape_, shape_).cpu().detach()
+        # pred = pred.view(shape_, shape_).cpu().detach()
+        x = trunc(x.view(shape_, shape_).cpu().detach())
+        y = trunc(y.view(shape_, shape_).cpu().detach())
+        pred = trunc(pred.view(shape_, shape_).cpu().detach())
 
         # Computing Measures
-        # data_range = args.trunc_max - args.trunc_min
+        data_range = args.trunc_max - args.trunc_min
         # data_range = args.norm_range_max - args.norm_range_min
-        data_range = y.max() - y.min()
+        # data_range = y.max() - y.min()
 
         original_result, pred_result = compute_measure(x, y, pred, data_range)
 
@@ -155,7 +155,7 @@ with torch.no_grad():
 
         if args.result_fig:
             save_fig(x, y, pred, i, original_result, pred_result)
-            # pred=normalize_(pred.numpy())
+            pred=normalize_(pred.numpy())
             pred=torch.Tensor(pred)
             utils.save_image(pred, os.path.join(args.results_path, 'Pred_{}.png'.format(i)))
 

@@ -63,7 +63,7 @@ def get_smooth_loss(image):
     smooth_loss = mse_loss(horizontal_normal, horizontal_one_right) + mse_loss(vertical_normal, vertical_one_right) 
     return smooth_loss
 
-def compute_SSIM(img1, img2, data_range, window_size, channel, size_average=True):
+def compute_SSIM(img1, img2, window_size, channel, size_average=True):
     # referred from https://github.com/Po-Hsun-Su/pytorch-ssim
     if len(img1.size()) == 2:
         shape_ = img1.shape[-1]
@@ -81,7 +81,6 @@ def compute_SSIM(img1, img2, data_range, window_size, channel, size_average=True
     sigma2_sq = F.conv2d(img2*img2, window, padding=window_size//2) - mu2_sq
     sigma12 = F.conv2d(img1*img2, window, padding=window_size//2) - mu1_mu2
 
-    # C1, C2 = (0.01*data_range)**2, (0.03*data_range)**2
     C1, C2 = 0.01**2, 0.03**2
 
     ssim_map = ((2*mu1_mu2+C1)*(2*sigma12+C2)) / ((mu1_sq+mu2_sq+C1)*(sigma1_sq+sigma2_sq+C2))
@@ -130,11 +129,11 @@ class MPL(torch.nn.Module):
     """
     def __init__(self):
         super(MPL, self).__init__()
-        self.model = models.vgg16(pretrained=True)
+        self.model = models.vgg19(pretrained=True)
         self.model.to(torch.device('cuda' if cuda_is_present else 'cpu'))
     def forward(self, target, prediction):
         perceptual_loss = 0
-        vgg16_layers = [3, 8, 15, 22, 29] # layers: 3, 8, 15, 22, 29
+        vgg16_layers = [3, 8, 17, 26, 35] # layers: 3, 8, 17, 26, 35
         for layer in vgg16_layers:
             feature_target = get_feature_layer_vgg16(target, layer, self.model)
             feature_prediction = get_feature_layer_vgg16(prediction, layer, self.model)
@@ -154,9 +153,8 @@ class SSIM(torch.nn.Module):
 
         self.window = create_window(window_size, self.channel)
         self.window.to(torch.device('cuda' if cuda_is_present else 'cpu'))
-    def forward(self, y, x, pred):
-        data_range = y.max() - y.min()
-        return compute_SSIM(x-y, x-pred, data_range, self.window_size, self.channel, self.size_average)
+    def forward(self, y, pred):
+        return compute_SSIM(y, pred, self.window_size, self.channel, self.size_average)
 
 class DLoss(torch.nn.Module):
     """

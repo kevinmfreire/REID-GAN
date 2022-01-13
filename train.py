@@ -46,7 +46,7 @@ parser.add_argument('--image_size', type=int, default=512)
 parser.add_argument('--lr', type=float, default=5e-5) # Defailt = 2e-4
 parser.add_argument('--num_epochs', type=int, default=500)
 parser.add_argument('--num_workers', type=int, default=4)
-parser.add_argument('--load_chkpt', type=bool, default=True)
+parser.add_argument('--load_chkpt', type=bool, default=False)
 
 parser.add_argument('--norm_range_min', type=float, default=-1024.0)
 parser.add_argument('--norm_range_max', type=float, default=3071.0)
@@ -167,11 +167,11 @@ for epoch in tq_epoch:
 		optimizer_generator.zero_grad()
 		g_net.zero_grad()
 		Dg = d_net(pred)
-		ssim_loss = -ssim(y, x, pred)
-		# rloss = criterion(pred, y, x)
+		ssim_loss = -ssim(y, pred)
+		rloss = criterion(pred, y, x)
 		mp_loss = multi_perceptual(y, pred)
 		g_loss = Gloss(Dg, pred, y)
-		gloss = g_loss + mp_loss + 10.0*ssim_loss
+		gloss = g_loss + 0.1*mp_loss + 10.0*ssim_loss + 0.01*rloss
 		gloss.backward()
 		optimizer_generator.step()
 
