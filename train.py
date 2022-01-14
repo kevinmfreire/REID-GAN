@@ -46,7 +46,7 @@ parser.add_argument('--image_size', type=int, default=512)
 parser.add_argument('--lr', type=float, default=2e-4) # 5e-5 without decaying rate
 parser.add_argument('--num_epochs', type=int, default=500)
 parser.add_argument('--num_workers', type=int, default=4)
-parser.add_argument('--load_chkpt', type=bool, default=False)
+parser.add_argument('--load_chkpt', type=bool, default=True)
 
 parser.add_argument('--norm_range_min', type=float, default=-1024.0)
 parser.add_argument('--norm_range_max', type=float, default=3071.0)
@@ -90,9 +90,6 @@ if args.load_chkpt:
 	cur_epoch = whole_model['epoch']
 	total_iters = whole_model['total_iters']
 	lr = whole_model['lr']
-	losses = []
-	loss = np.load(args.save_path + 'loss_arr.npy')
-	losses.append((loss.T[0], loss.T[1]))
 	# g_net = torch.nn.DataParallel(g_net, device_ids=[0, 1])
 	# d_net = torch.nn.DataParallel(d_net, device_ids=[0, 1])
 	print('Current Epoch:{}, Total Iters: {}, Learning rate: {}, Batch size: {}'.format(cur_epoch, total_iters, lr, args.batch_size))
@@ -107,7 +104,6 @@ else:
 	cur_epoch = 0
 	total_iters = 0
 	lr=args.lr
-	losses = []
 
 # Losses
 Dloss = DLoss()
@@ -117,6 +113,7 @@ criterion = to_cuda(criterion)
 multi_perceptual = MPL()
 ssim = SSIM()
 
+losses = []
 start_time = time.time()
 tq_epoch = tqdm(range(cur_epoch, args.num_epochs),position=1, leave=True, desc='Epochs')
 torch.autograd.set_detect_anomaly(True)
@@ -217,20 +214,6 @@ for epoch in tq_epoch:
 	# Saving to google drive
 	save_loss = '/gdrive/MyDrive/deconv_model/loss_arr.npy'
 	np.save(save_loss, losses, allow_pickle=True)
-
-	# Visualizing the average losses at every epoch
-	# losses = np.array(losses)
-	# plt.plot(losses.T[0], label='Generator')
-	# plt.plot(losses.T[1], label='Discriminator')
-	# plt.title("Training Losses")
-	# plt.xlabel("Epoch")
-	# plt.ylabel("Loss")
-	# plt.legend()
-	# plt.savefig('{}loss_plot.png'.format(args.save_path))
-
-	# Saving figure to google drive after every epoch
-	# save_loss = 'cp {}loss_plot.png /gdrive/MyDrive/deconv_model/'.format(args.save_path)
-	# os.system(save_loss)
 	
 	tq_epoch.set_postfix({'STEP': total_iters,'AVG_G_LOSS': '{:.5f}'.format(avg_gloss), 'AVG_D_LOSS': '{:.8f}'.format(avg_dloss)})
 	
