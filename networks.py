@@ -52,11 +52,15 @@ class GNet(nn.Module):
 
         sum3 = res3.add(sum2)
 
-        res4 = self.residual(res3)
+        res4 = self.residual(sum3)
 
         sum4 = res4.add(sum3)
 
-        deconv1 = self.deconv1(sum4)
+        res5 = self.residual(sum4)
+
+        sum5 = res5.add(sum4)
+
+        deconv1 = self.deconv1(sum5)
 
         deconv2 = self.deconv2(torch.cat((layer1,deconv1),1))
 
