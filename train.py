@@ -90,6 +90,9 @@ if args.load_chkpt:
 	cur_epoch = whole_model['epoch']
 	total_iters = whole_model['total_iters']
 	lr = whole_model['lr']
+	losses = []
+	loss = np.load(args.save_path + 'loss_arr.npy')
+	losses.append((loss.T[0], loss.T[1]))
 	# g_net = torch.nn.DataParallel(g_net, device_ids=[0, 1])
 	# d_net = torch.nn.DataParallel(d_net, device_ids=[0, 1])
 	print('Current Epoch:{}, Total Iters: {}, Learning rate: {}, Batch size: {}'.format(cur_epoch, total_iters, lr, args.batch_size))
@@ -104,6 +107,7 @@ else:
 	cur_epoch = 0
 	total_iters = 0
 	lr=args.lr
+	losses = []
 
 # Losses
 Dloss = DLoss()
@@ -113,7 +117,6 @@ criterion = to_cuda(criterion)
 multi_perceptual = MPL()
 ssim = SSIM()
 
-losses = []
 start_time = time.time()
 tq_epoch = tqdm(range(cur_epoch, args.num_epochs),position=1, leave=True, desc='Epochs')
 torch.autograd.set_detect_anomaly(True)
