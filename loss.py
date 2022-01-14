@@ -7,11 +7,6 @@ from torch.autograd import Variable
 import torchvision.models as models
 from torchvision.models._utils import IntermediateLayerGetter
 
-parser= argparse.ArgumentParser()
-parser.add_argument('--norm_range_min', type=float, default=-1024.0)
-parser.add_argument('--norm_range_max', type=float, default=3071.0)
-args = parser.parse_args()
-
 # Check CUDA's presence
 cuda_is_present = True if torch.cuda.is_available() else False
 Tensor = torch.cuda.FloatTensor if cuda_is_present else torch.FloatTensor
