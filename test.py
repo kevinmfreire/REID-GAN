@@ -102,7 +102,7 @@ cuda_is_present = True if torch.cuda.is_available() else False
 Tensor = torch.cuda.FloatTensor if cuda_is_present else torch.FloatTensor
 
 # load   
-whole_model = torch.load(args.save_path + 'latest_ckpt.pth.tar', map_location=torch.device('cuda' if cuda_is_present else 'cpu'))
+whole_model = torch.load(args.save_path + 'epoch_50_ckpt.pth.tar', map_location=torch.device('cuda' if cuda_is_present else 'cpu'))
 netG_state_dict= whole_model['netG_state_dict']
 epoch = whole_model['epoch']
 netG = GNet()
