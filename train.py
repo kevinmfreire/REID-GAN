@@ -46,7 +46,7 @@ parser.add_argument('--image_size', type=int, default=512)
 parser.add_argument('--lr', type=float, default=2e-4) # 5e-5 without decaying rate
 parser.add_argument('--num_epochs', type=int, default=500)
 parser.add_argument('--num_workers', type=int, default=4)
-parser.add_argument('--load_chkpt', type=bool, default=True)
+parser.add_argument('--load_chkpt', type=bool, default=False)
 
 parser.add_argument('--norm_range_min', type=float, default=-1024.0)
 parser.add_argument('--norm_range_max', type=float, default=3071.0)
@@ -108,8 +108,8 @@ else:
 # Losses
 Dloss = DLoss()
 Gloss = GLoss()
-# criterion = NCMSE()
-# criterion = to_cuda(criterion)
+criterion = NCMSE()
+criterion = to_cuda(criterion)
 multi_perceptual = MPL()
 ssim = SSIM()
 
@@ -168,15 +168,15 @@ for epoch in tq_epoch:
 		g_net.zero_grad()
 		Dg = d_net(pred)
 		ssim_loss = -ssim(y, pred)
-		# rloss = criterion(pred, y, x)
+		rloss = criterion(pred, y, x)
 		mp_loss = multi_perceptual(y, pred)
 		g_loss = Gloss(Dg, pred, y)
-		gloss = g_loss + mp_loss + ssim_loss
+		gloss = g_loss + mp_loss + ssim_loss + 0.1*rloss
 		gloss.backward()
 		optimizer_generator.step()
 
-		dloss_sum += dloss.item()
-		gloss_sum += gloss.item()
+		dloss_sum += dloss.detach().item()
+		gloss_sum += gloss.detach().item()
 		
 		data_tqdm.set_postfix({'ITER': i+1, 'G_LOSS': '{:.5f}'.format(gloss.item()), 'D_LOSS': '{:.8f}'.format(dloss.item())})
 		if total_iters % args.decay_iters == 0:
@@ -218,7 +218,7 @@ for epoch in tq_epoch:
 	tq_epoch.set_postfix({'STEP': total_iters,'AVG_G_LOSS': '{:.5f}'.format(avg_gloss), 'AVG_D_LOSS': '{:.8f}'.format(avg_dloss)})
 	
 	# Saving model after every 10 epoch
-	if epoch % 10 == 0:
+	if epoch % 5 == 0:
 		cmd1 = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/deconv_model/epoch_{}_ckpt.pth.tar'.format(args.save_path, epoch)
 		cmd2 = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/deconv_model/'.format(args.save_path)
 		os.system(cmd1)

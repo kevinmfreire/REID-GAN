@@ -98,7 +98,7 @@ class STD(torch.nn.Module):
         mu_sq=mu.pow(2)
         sigma_sq = F.conv2d(img*img, self.window, padding = self.window_size//2, groups = self.channel) - mu_sq
         B,C,W,H=sigma_sq.shape
-        sigma_sq = torch.sqrt(sigma_sq)
+        # sigma_sq = torch.sqrt(sigma_sq)
         sigma_sq=torch.flatten(sigma_sq, start_dim=1)
         noise_map = self.softmax(sigma_sq)
         noise_map=torch.reshape(noise_map,[B,C,W,H])
