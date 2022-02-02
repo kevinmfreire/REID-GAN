@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import argparse
 from loader import get_loader
-# from prep import printProgressBar
+from prep import printProgressBar
 # from networks import UNet
 # from measure import compute_measure
 import numpy as np
@@ -21,6 +21,7 @@ parser.add_argument('--mode', type=str, default='test')
 parser.add_argument('--load_mode', type=int, default=1)
 parser.add_argument('--saved_path', type=str, default='./patient/data/npy_img/')
 parser.add_argument('--save_path', type=str, default='./deconv_model/')
+# parser.add_argument('--save_path', type=str, default='./NCSSMP/')
 parser.add_argument('--results_path', type=str, default='./deconv_model/results/')
 parser.add_argument('--data_path', type=str, default='./patient/Checkpoint/save/fig/')
 parser.add_argument('--test_patient', type=str, default='L064')
@@ -102,7 +103,7 @@ cuda_is_present = True if torch.cuda.is_available() else False
 Tensor = torch.cuda.FloatTensor if cuda_is_present else torch.FloatTensor
 
 # load   
-whole_model = torch.load(args.save_path + 'latest_ckpt.pth.tar', map_location=torch.device('cuda' if cuda_is_present else 'cpu'))
+whole_model = torch.load(args.save_path + 'latest_ckpt.pth_1.tar', map_location=torch.device('cuda' if cuda_is_present else 'cpu'))
 netG_state_dict= whole_model['netG_state_dict']
 epoch = whole_model['epoch']
 netG = GNet()
@@ -127,17 +128,12 @@ with torch.no_grad():
         pred = netG(x)
 
         # Reshaping pred for computing measurements
-        # x = x.view(shape_, shape_).cpu().detach()
-        # y = y.view(shape_, shape_).cpu().detach()
-        # pred = pred.view(shape_, shape_).cpu().detach()
         x = trunc(x.view(shape_, shape_).cpu().detach())
         y = trunc(y.view(shape_, shape_).cpu().detach())
         pred = trunc(pred.view(shape_, shape_).cpu().detach())
 
         # Computing Measures
         data_range = args.trunc_max - args.trunc_min
-        # data_range = args.norm_range_max - args.norm_range_min
-        # data_range = y.max() - y.min()
 
         original_result, pred_result = compute_measure(x, y, pred, data_range)
 
@@ -149,16 +145,23 @@ with torch.no_grad():
         pred_rmse_avg += pred_result[2]
 
         # save result figure
-        if not os.path.exists(args.results_path):
-            os.makedirs(args.results_path)
-            print('Create path : {}'.format(args.results_path))
+        # if not os.path.exists(args.results_path):
+        #     os.makedirs(args.results_path)
+        #     print('Create path : {}'.format(args.results_path))
 
-        if args.result_fig:
-            save_fig(x, y, pred, i, original_result, pred_result)
-            pred=normalize_(pred.numpy())
-            pred=torch.Tensor(pred)
-            utils.save_image(pred, os.path.join(args.results_path, 'Pred_{}.png'.format(i)))
+        # if args.result_fig:
+        #     save_fig(x, y, pred, i, original_result, pred_result)
+        #     pred=normalize_(pred.numpy())
+        #     pred=torch.Tensor(pred)
+        #     utils.save_image(pred, os.path.join(args.results_path, 'Pred_{}.png'.format(i)))
 
-quit()    
-cmd = 'cp -r {} /gdrive/MyDrive/model_results/{}_epoch_results/'.format(args.results_path, epoch)
-os.system(cmd)
+        printProgressBar(i, len(data_loader),
+                         prefix="Compute measurements ..",
+                         suffix='Complete', length=25)
+    print('\n')
+    print('Original\nPSNR avg: {:.4f} \nSSIM avg: {:.4f} \nRMSE avg: {:.4f}'.format(ori_psnr_avg/len(data_loader), 
+                                                                                    ori_ssim_avg/len(data_loader), 
+                                                                                    ori_rmse_avg/len(data_loader)))
+    print('After learning\nPSNR avg: {:.4f} \nSSIM avg: {:.4f} \nRMSE avg: {:.4f}'.format(pred_psnr_avg/len(data_loader), 
+                                                                                          pred_ssim_avg/len(data_loader), 
+                                                                                          pred_rmse_avg/len(data_loader)))

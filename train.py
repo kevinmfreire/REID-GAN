@@ -29,6 +29,7 @@ parser.add_argument('--load_mode', type=int, default=1)
 parser.add_argument('--data_path', type=str, default='./patient')
 parser.add_argument('--saved_path', type=str, default='./patient/data/npy_img/')
 parser.add_argument('--save_path', type=str, default='./deconv_model/')
+# parser.add_argument('--save_path', type=str, default='./NCSSMP/')
 parser.add_argument('--test_patient', type=str, default='L064')
 
 parser.add_argument('--save_iters', type=int, default=10)
@@ -103,7 +104,7 @@ else:
 	optimizer_discriminator = torch.optim.Adam(d_net.parameters(), lr=4*args.lr, betas=(0.5,0.9))
 	cur_epoch = 0
 	total_iters = 0
-	lr=args.lr
+	lr = args.lr
 
 # Losses
 Dloss = DLoss()
