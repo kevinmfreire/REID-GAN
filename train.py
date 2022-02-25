@@ -29,7 +29,7 @@ parser.add_argument('--mode', type=str, default='train')
 parser.add_argument('--load_mode', type=int, default=1)
 parser.add_argument('--data_path', type=str, default='./patient')
 parser.add_argument('--saved_path', type=str, default='./patient/data/npy_img/')
-parser.add_argument('--save_path', type=str, default='./deconv_model/')
+parser.add_argument('--save_path', type=str, default='./rigan_model/')
 # parser.add_argument('--save_path', type=str, default='./NCSSMP/')
 parser.add_argument('--test_patient', type=str, default='L064')
 
@@ -150,9 +150,6 @@ for epoch in tq_epoch:
 
 		# Predictions
 		pred = Gnet(x)
-		# dis = Dnet(x)
-		# print(dis)
-		# quit()
 
 		for _ in range(5):
 			# Training discriminator
@@ -205,7 +202,7 @@ for epoch in tq_epoch:
 			}
 			torch.save(saved_model, '{}latest_ckpt.pth.tar'.format(args.save_path))
 			# Saving to google drive due to training time limits in Google collab
-			cmd = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/deconv_model/'.format(args.save_path)
+			cmd = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/rigan_model/'.format(args.save_path)
 			os.system(cmd)
 	
 	# Calculating average loss
@@ -214,14 +211,14 @@ for epoch in tq_epoch:
 	losses.append((avg_gloss, avg_dloss))
 
 	# Saving to google drive
-	save_loss = '/gdrive/MyDrive/deconv_model/loss_arr.npy'
+	save_loss = '/gdrive/MyDrive/rigan_model/loss_arr.npy'
 	np.save(save_loss, losses, allow_pickle=True)
 	
 	tq_epoch.set_postfix({'STEP': total_iters,'AVG_G_LOSS': '{:.5f}'.format(avg_gloss), 'AVG_D_LOSS': '{:.8f}'.format(avg_dloss)})
 	
 	# Saving model after every 10 epoch
 	if epoch % 5 == 0:
-		cmd1 = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/deconv_model/epoch_{}_ckpt.pth.tar'.format(args.save_path, epoch)
-		cmd2 = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/deconv_model/'.format(args.save_path)
+		cmd1 = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/rigan_model/epoch_{}_ckpt.pth.tar'.format(args.save_path, epoch)
+		cmd2 = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/rigan_model/'.format(args.save_path)
 		os.system(cmd1)
 		os.system(cmd2)
