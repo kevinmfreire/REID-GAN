@@ -48,16 +48,6 @@ def get_feature_loss(target, prediction, layer, model):
     feature_loss = feature_difference.norm(p=2) / float(feature_count)
     return feature_loss
 
-def get_smooth_loss(image):
-    _, _ , image_height, image_width = image.size()
-    horizontal_normal = image[:, :, :, 0:image_width-1]
-    horizontal_one_right = image[:, :, :, 1:image_width]
-    vertical_normal = image[:, :, 0:image_height-1, :]
-    vertical_one_right = image[:, :, 1:image_height, :]
-    # smooth_loss = torch.sum(torch.pow(horizontal_normal-horizontal_one_right, 2)) / 2.0 + torch.sum(torch.pow(vertical_normal - vertical_one_right, 2)) / 2.0
-    smooth_loss = mse_loss(horizontal_normal, horizontal_one_right) + mse_loss(vertical_normal, vertical_one_right) 
-    return smooth_loss
-
 def compute_SSIM(img1, img2, window_size, channel, size_average=True):
     # referred from https://github.com/Po-Hsun-Su/pytorch-ssim
     if len(img1.size()) == 2:
@@ -85,39 +75,6 @@ def compute_SSIM(img1, img2, window_size, channel, size_average=True):
     else:
         return ssim_map.mean(1).mean(1).mean(1)
 
-class STD(torch.nn.Module):
-    def __init__(self, window_size = 5):
-        super(STD, self).__init__()
-        self.window_size = window_size
-        self.channel=1
-        self.softmax = torch.nn.LogSoftmax(dim=1)
-        self.window=create_window(self.window_size, self.channel)
-        self.window.to(torch.device('cuda' if cuda_is_present else 'cpu'))
-    def forward(self, img):
-        mu = F.conv2d(img, self.window, padding = self.window_size//2, groups = self.channel)
-        mu_sq=mu.pow(2)
-        sigma_sq = F.conv2d(img*img, self.window, padding = self.window_size//2, groups = self.channel) - mu_sq
-        B,C,W,H=sigma_sq.shape
-        # sigma_sq = torch.sqrt(sigma_sq)
-        sigma_sq=torch.flatten(sigma_sq, start_dim=1)
-        noise_map = self.softmax(sigma_sq)
-        noise_map=torch.reshape(noise_map,[B,C,W,H])
-        return noise_map
-
-class NCMSE(nn.Module):
-    # Noise Concious MSE Loss referred from https://github.com/reach2sbera/ldct_nonlocal
-    """
-    The Noise Conscious MSE Loss 
-    """
-    def __init__(self):
-        super(NCMSE, self).__init__()
-        self.std=STD()
-    def forward(self, out_image, gt_image, org_image):
-        _, C, H, W = out_image.size()
-        N = C*H*W
-        loss = -torch.mean(torch.mul(self.std(org_image - gt_image), torch.pow(out_image - gt_image, 2))) / float(N) 
-        return loss
-
 class MPL(torch.nn.Module):
     """
     The Multi Perceptual Loss Function
@@ -126,10 +83,11 @@ class MPL(torch.nn.Module):
         super(MPL, self).__init__()
         self.model = models.vgg19(pretrained=True)
         self.model.to(torch.device('cuda' if cuda_is_present else 'cpu'))
+
     def forward(self, target, prediction):
         perceptual_loss = 0
-        vgg16_layers = [3, 8, 17, 26, 35] # layers: 3, 8, 17, 26, 35
-        for layer in vgg16_layers:
+        vgg19_layers = [3, 8, 17, 26, 35] # layers: 3, 8, 17, 26, 35
+        for layer in vgg19_layers:
             feature_target = get_feature_layer_vgg16(target, layer, self.model)
             feature_prediction = get_feature_layer_vgg16(prediction, layer, self.model)
             _, C, H, W = feature_target.size()
@@ -149,25 +107,26 @@ class SSIM(torch.nn.Module):
         self.window = create_window(window_size, self.channel)
         self.window.to(torch.device('cuda' if cuda_is_present else 'cpu'))
     def forward(self, y, pred):
-        return compute_SSIM(y, pred, self.window_size, self.channel, self.size_average)
+        ssim = compute_SSIM(y, pred, self.window_size, self.channel, self.size_average)
+        return 1.0-ssim/2.0
 
-class DLoss(torch.nn.Module):
+class DLoss(nn.Module):
     """
     The loss for discriminator
     """
     def __init__(self):
         super(DLoss, self).__init__()
-        # self.weight = weight
+        
     def forward(self, Dy, Dg):
         return -torch.mean(Dy) + torch.mean(Dg)
 
-class GLoss(torch.nn.Module):
+class GLoss(nn.Module):
     """
     The loss for generator
     """
-    def __init__(self):
+    def __init__(self, weight=1):
         super(GLoss, self).__init__()
-    def forward(self, Dg, pred, y):
-        ADVERSARIAL_LOSS_FACTOR, PIXEL_LOSS_FACTOR = 0.5, 1.0
-        loss = ADVERSARIAL_LOSS_FACTOR * -torch.mean(Dg) #+ PIXEL_LOSS_FACTOR * mse_loss(y,pred)
+
+    def forward(self, Dg):
+        loss = 1.0 - torch.mean(Dg) / 2.0
         return loss

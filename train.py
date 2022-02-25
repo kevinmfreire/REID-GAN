@@ -18,6 +18,7 @@ import torchvision.transforms as transforms
 from torchvision.utils import save_image
 from loss import *
 from networks import *
+from rinet import *
 from loader import get_loader
 from tqdm import tqdm
 
@@ -40,7 +41,7 @@ parser.add_argument('--gan_alt', type=int, default=2)
 parser.add_argument('--transform', type=bool, default=False)
 # if patch training, batch size is (--patch_n * --batch_size)
 parser.add_argument('--patch_n', type=int, default=10)		# default = 4
-parser.add_argument('--patch_size', type=int, default=120)	# default = 100
+parser.add_argument('--patch_size', type=int, default=128)	# default = 100
 parser.add_argument('--batch_size', type=int, default=5)	# default = 5
 parser.add_argument('--image_size', type=int, default=512)
 
@@ -78,14 +79,14 @@ if args.load_chkpt:
 	whole_model = torch.load(args.save_path+ 'latest_ckpt.pth.tar', map_location=torch.device('cuda' if cuda_is_present else 'cpu'))
 	netG_state_dict,optG_state_dict = whole_model['netG_state_dict'], whole_model['optG_state_dict']
 	netD_state_dict,optD_state_dict = whole_model['netD_state_dict'], whole_model['optD_state_dict']
-	g_net = GNet()
-	g_net = to_cuda(g_net)
-	d_net = DNet()
-	d_net = to_cuda(d_net)
-	optimizer_generator = torch.optim.Adam(g_net.parameters(), lr=args.lr, betas=(0.5,0.9))
-	optimizer_discriminator = torch.optim.Adam(d_net.parameters(), lr=4*args.lr, betas=(0.5,0.9))
-	d_net.load_state_dict(netD_state_dict)
-	g_net.load_state_dict(netG_state_dict)
+	Gnet = RIGAN()
+	Gnet = to_cuda(Gnet)
+	Dnet = ImageDiscriminator()
+	Dnet = to_cuda(Dnet)
+	optimizer_generator = torch.optim.Adam(Gnet.parameters(), lr=args.lr, betas=(0.5,0.9))
+	optimizer_discriminator = torch.optim.Adam(Dnet.parameters(), lr=4*args.lr, betas=(0.5,0.9))
+	Gnet.load_state_dict(netG_state_dict)
+	Dnet.load_state_dict(netD_state_dict)
 	optimizer_generator.load_state_dict(optG_state_dict)
 	optimizer_discriminator.load_state_dict(optD_state_dict)
 	cur_epoch = whole_model['epoch']
@@ -96,12 +97,12 @@ if args.load_chkpt:
 	print('Current Epoch:{}, Total Iters: {}, Learning rate: {}, Batch size: {}'.format(cur_epoch, total_iters, lr, args.batch_size))
 else:
 	print('Training model from scrath')
-	g_net = GNet()
-	g_net = to_cuda(g_net)
-	d_net = DNet()
-	d_net = to_cuda(d_net)
-	optimizer_generator = torch.optim.Adam(g_net.parameters(), lr=args.lr, betas=(0.5,0.9))
-	optimizer_discriminator = torch.optim.Adam(d_net.parameters(), lr=4*args.lr, betas=(0.5,0.9))
+	Gnet = RIGAN()
+	Gnet = to_cuda(Gnet)
+	Dnet = ImageDiscriminator()
+	Dnet = to_cuda(Dnet)
+	optimizer_generator = torch.optim.Adam(Gnet.parameters(), lr=args.lr, betas=(0.5,0.9))
+	optimizer_discriminator = torch.optim.Adam(Dnet.parameters(), lr=4*args.lr, betas=(0.5,0.9))
 	cur_epoch = 0
 	total_iters = 0
 	lr = args.lr
@@ -109,8 +110,6 @@ else:
 # Losses
 Dloss = DLoss()
 Gloss = GLoss()
-criterion = NCMSE()
-criterion = to_cuda(criterion)
 multi_perceptual = MPL()
 ssim = SSIM()
 
@@ -123,8 +122,8 @@ for epoch in tq_epoch:
 	# Initializing sum of losses for discriminator and generator
 	gloss_sum, dloss_sum, count = 0, 0, 0
 
-	d_net.train()
-	g_net.train()
+	Dnet.train()
+	Gnet.train()
 
 	data_tqdm = tqdm(data_loader, position=0, leave=True, desc='Iters')
 	for i, (x, y) in enumerate(data_tqdm):
@@ -150,29 +149,31 @@ for epoch in tq_epoch:
 		x = to_cuda(x)
 
 		# Predictions
-		pred = g_net(x)
+		pred = Gnet(x)
+		# dis = Dnet(x)
+		# print(dis)
+		# quit()
 
 		for _ in range(5):
 			# Training discriminator
-			d_net.parameters(True)
+			Dnet.parameters(True)
 			optimizer_discriminator.zero_grad()
-			d_net.zero_grad()
-			Dy = d_net(y)
-			Dg = d_net(pred)
+			Dnet.zero_grad()
+			Dy = Dnet(y)
+			Dg = Dnet(pred)
 			dloss = Dloss(Dy,Dg)
 			dloss.backward(retain_graph=True)
 			optimizer_discriminator.step()
 
 		# Training generator
-		d_net.parameters(False)
+		Dnet.parameters(False)
 		optimizer_generator.zero_grad()
-		g_net.zero_grad()
-		Dg = d_net(pred)
-		ssim_loss = -ssim(y, pred)
-		rloss = criterion(pred, y, x)
+		Gnet.zero_grad()
+		Dg = Dnet(pred)
+		ssim_loss = ssim(y, pred)
 		mp_loss = multi_perceptual(y, pred)
-		g_loss = Gloss(Dg, pred, y)
-		gloss = g_loss + mp_loss + ssim_loss + 0.1*rloss
+		g_loss = Gloss(Dg)
+		gloss = 0.5*g_loss + 0.1*mp_loss + 0.4*ssim_loss
 		gloss.backward()
 		optimizer_generator.step()
 
@@ -195,9 +196,9 @@ for epoch in tq_epoch:
 			print('Saving model to: ' + args.save_path)
 			saved_model = {
 				'epoch': epoch ,
-				'netG_state_dict': g_net.state_dict(),
+				'netG_state_dict': Gnet.state_dict(),
 				'optG_state_dict': optimizer_generator.state_dict(),
-				'netD_state_dict': d_net.state_dict(),
+				'netD_state_dict': Dnet.state_dict(),
 				'optD_state_dict': optimizer_discriminator.state_dict(),
 				'lr': lr,
 				'total_iters': total_iters

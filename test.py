@@ -70,10 +70,6 @@ def normalize_(image, MIN_B=-160.0, MAX_B=240.0):
     image = (image - MIN_B) / (MAX_B - MIN_B)
     return image
 
-# def normalize_(image):
-#     image = (image - args.norm_range_min) / (args.norm_range_max - args.norm_range_min)
-#     return image
-
 def trunc(mat):
     mat[mat <= args.trunc_min] = args.trunc_min
     mat[mat >= args.trunc_max] = args.trunc_max
