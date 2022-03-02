@@ -116,9 +116,10 @@ class DLoss(nn.Module):
     """
     def __init__(self):
         super(DLoss, self).__init__()
+        self.activation = nn.ReLU()
         
     def forward(self, Dy, Dg):
-        return -torch.mean(Dy) + torch.mean(Dg)
+        return self.activation(1-torch.mean(Dy)) + self.activation(1+torch.mean(Dg))
 
 class GLoss(nn.Module):
     """
@@ -128,5 +129,5 @@ class GLoss(nn.Module):
         super(GLoss, self).__init__()
 
     def forward(self, Dg):
-        loss = 1.0 - torch.mean(Dg) / 2.0
+        loss = -torch.mean(Dg)
         return loss

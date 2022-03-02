@@ -151,13 +151,14 @@ for epoch in tq_epoch:
 		# Predictions
 		pred = Gnet(x)
 
+		# Training discriminator
 		for _ in range(5):
-			# Training discriminator
 			Dnet.parameters(True)
 			optimizer_discriminator.zero_grad()
 			Dnet.zero_grad()
-			Dy = Dnet(y)
-			Dg = Dnet(pred)
+			pos_neg_imgs = torch.cat([y, pred], dim=0)
+			pred_pos_neg = Dnet(pos_neg_imgs)
+			Dy, Dg = torch.chunk(pred_pos_neg, 2, dim=0)
 			dloss = Dloss(Dy,Dg)
 			dloss.backward(retain_graph=True)
 			optimizer_discriminator.step()
@@ -171,7 +172,7 @@ for epoch in tq_epoch:
 		mp_loss = multi_perceptual(y, pred)
 		g_loss = Gloss(Dg)
 		gloss = 0.5*g_loss + 0.1*mp_loss + 0.4*ssim_loss
-		gloss.backward()
+		gloss.backward(retain_graph=True)
 		optimizer_generator.step()
 
 		dloss_sum += dloss.detach().item()

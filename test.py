@@ -13,6 +13,7 @@ import numpy as np
 import torchvision.utils as utils
 from torch.autograd import Variable
 from networks import *
+from rinet import *
 from measure import compute_measure
 
 parser = argparse.ArgumentParser()
@@ -99,10 +100,10 @@ cuda_is_present = True if torch.cuda.is_available() else False
 Tensor = torch.cuda.FloatTensor if cuda_is_present else torch.FloatTensor
 
 # load   
-whole_model = torch.load(args.save_path + 'latest_ckpt.pth_1.tar', map_location=torch.device('cuda' if cuda_is_present else 'cpu'))
+whole_model = torch.load(args.save_path + 'latest_ckpt.pth.tar', map_location=torch.device('cuda' if cuda_is_present else 'cpu'))
 netG_state_dict= whole_model['netG_state_dict']
 epoch = whole_model['epoch']
-netG = GNet()
+netG = RIGAN()
 netG = to_cuda(netG)
 netG.load_state_dict(netG_state_dict)
 

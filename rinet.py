@@ -13,42 +13,21 @@ class ImageDiscriminator(nn.Module):
         self.inter_channels = 64
         conv_block = SNConv2d
 
-        self.block_1 = nn.Sequential(
-            conv_block(1, self.inter_channels, 3, 1),
-            conv_block(self.inter_channels, self.inter_channels, 3, 2)
-            )
-
-        self.block_2 = nn.Sequential(
-            conv_block(self.inter_channels, self.inter_channels*2, 3, 1),
-            conv_block(self.inter_channels*2, self.inter_channels*2, 3, 2)
-        )
-
-        self.block_3 = nn.Sequential(
-            conv_block(self.inter_channels*2, self.inter_channels*4, 3, 1),
-            conv_block(self.inter_channels*4, self.inter_channels*4, 3, 2)
-        )
-
-        self.block_4 = nn.Sequential(
-            conv_block(self.inter_channels*4, self.inter_channels*8, 3, 1),
-            conv_block(self.inter_channels*8, self.inter_channels*8, 3, 2)
-        )
-
-        self.avgpool = nn.AdaptiveAvgPool2d((1,1))
-        self.fc = nn.Linear(self.inter_channels*8, 1)
-        self.softmax = nn.Softmax(dim=-1)
-        self.sigmoid = nn.Sigmoid()
+        self.conv1 = conv_block(1, self.inter_channels, 3, 1, padding=1)
+        self.conv2 = conv_block(self.inter_channels, self.inter_channels*2, 3, 2, padding=1)
+        self.conv3 = conv_block(self.inter_channels*2, self.inter_channels*4, 3, 2, padding=1)
+        self.conv4 = conv_block(self.inter_channels*4, self.inter_channels*8, 3, 2, padding=1)
+        self.conv5 = conv_block(self.inter_channels*8, self.inter_channels*8, 3, 2, padding=1)
         
     def forward(self, x):
 
-        x = self.block_1(x)
-        x = self.block_2(x)
-        x = self.block_3(x)
-        x = self.block_4(x)
-        x = self.avgpool(x)
-        x = x.reshape(x.shape[0], -1)
-        x = self.fc(x)
-        # x = self.softmax(x)
-        x = self.sigmoid(x)
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.conv3(x)
+        x = self.conv4(x)
+        x = self.conv5(x)
+        x = self.conv5(x)
+        x = x.view((x.size(0), -1))
 
         return x
 
@@ -85,7 +64,7 @@ class RIGAN(nn.Module):
 
         self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
         self.deconv1 = deconv_block(192, self.inter_channels, 4, 2, padding=1)
-        self.conv2 = nn.Conv2d(self.inter_channels, 1, 1)
+        self.conv2 = nn.Conv2d(self.inter_channels, 1, 1, bias=False)
 
     def forward(self, x):
         
@@ -149,36 +128,47 @@ class RIGAN(nn.Module):
         return inception_block(in_channels, decoder)
 
 class SNConv2d(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0):
+    """
+    SN convolution for spetral normalization conv
+    """
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, dilation = 1, groups=1, bias=True):
         super(SNConv2d, self).__init__()
-        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding)
-        self.conv = nn.utils.spectral_norm(self.conv)
+        self.conv2d = nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding, dilation, groups, bias)
+        self.conv2d = nn.utils.spectral_norm(self.conv2d)
         self.activation = nn.LeakyReLU(0.2, inplace=True)
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight)
     def forward(self,x):
-        x = self.conv(x)
-        return self.activation(x)
+        x = self.conv2d(x)
+        if self.activation is not None:
+            return self.activation(x)
+        else:
+            return x
 
 class BasicConv2d(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0):
         super(BasicConv2d, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding, bias=False)
         self.bn = nn.BatchNorm2d(out_channels, eps=0.001)
+        self.activation = nn.ReLU(inplace=True)
 
     def forward(self, x):
         x = self.conv(x)
         x = self.bn(x)
-        return F.relu(x, inplace=True)
+        return self.activation(x)
 
 class BasicDeconv2d(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1,padding=0):
         super(BasicDeconv2d, self).__init__()
         self.deconv = nn.ConvTranspose2d(in_channels, out_channels, kernel_size, stride, padding, bias=False)
         self.bn = nn.BatchNorm2d(out_channels, eps=0.001)
+        self.activation = nn.ReLU(inplace=True)
 
     def forward(self, x):
         x = self.deconv(x)
         x = self.bn(x)
-        return F.relu(x, inplace=True)
+        return self.activation(x)
 
 class InceptionA(nn.Module):
     def __init__(self, in_channels, identity_downsample=None, conv_block: Optional[Callable[..., nn.Module]] = None):
