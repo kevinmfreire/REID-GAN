@@ -151,7 +151,6 @@ for epoch in tq_epoch:
 		# Predictions
 		pred = Gnet(x)
 
-		# Training discriminator
 		for _ in range(5):
 			Dnet.parameters(True)
 			optimizer_discriminator.zero_grad()

@@ -81,12 +81,12 @@ class MPL(torch.nn.Module):
     """
     def __init__(self):
         super(MPL, self).__init__()
-        self.model = models.vgg19(pretrained=True)
+        self.model = models.vgg16(pretrained=True)
         self.model.to(torch.device('cuda' if cuda_is_present else 'cpu'))
 
     def forward(self, target, prediction):
         perceptual_loss = 0
-        vgg19_layers = [3, 8, 17, 26, 35] # layers: 3, 8, 17, 26, 35
+        vgg19_layers = [3, 8, 15, 22, 29] # layers: 3, 8, 15, 22, 29
         for layer in vgg19_layers:
             feature_target = get_feature_layer_vgg16(target, layer, self.model)
             feature_prediction = get_feature_layer_vgg16(prediction, layer, self.model)
