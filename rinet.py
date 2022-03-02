@@ -38,7 +38,7 @@ class RIGAN(nn.Module):
             inception_blocks = [BasicConv2d, InceptionA, InceptionB, InceptionC, InceptionD, InceptionE, BasicDeconv2d]
         
         self.in_channels = 64
-        self.inter_channels = 64
+        self.inter_channels = 32
         
         assert len(inception_blocks) == 7
         conv_block = inception_blocks[0]
@@ -49,46 +49,53 @@ class RIGAN(nn.Module):
         inception_e = inception_blocks[5]
         deconv_block = inception_blocks[6]
 
-        self.conv1 = conv_block(1, self.inter_channels, 3, 2, padding=1)
-        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        self.channel_conv1 = conv_block(1, self.inter_channels, 1, 1)
+        self.spatial_conv1 = conv_block(self.inter_channels, self.inter_channels, 3, 2, padding=1)
+        self.channel_conv2 = conv_block(self.inter_channels, self.inter_channels*2, 1, 1)
+        self.spatial_conv2 = conv_block(self.inter_channels*2, self.inter_channels*2, 3, 2, padding=1)
 
         self.layer_block_1 = self._make_layer(inception_a, 3, inter_channels=32)
         self.reduce_grid_1 = self._alter_grid_layer(inception_b, 128, inter_channels=64)
-        self.layer_block_2 = self._make_layer(inception_c, 2, inter_channels=64, channels_7x7=64)
+        self.layer_block_2 = self._make_layer(inception_c, 3, inter_channels=64, channels_7x7=64)
         self.reduce_grid_2 = self._alter_grid_layer(inception_d, 256, inter_channels=128)
         self.layer_block_3 = self._make_layer(inception_e, 2, inter_channels=256)
-        self.expand_grid_1 = self._alter_grid_layer(inception_d, 1536, inter_channels=192, decoder=1)
+        self.expand_grid_1 = self._alter_grid_layer(inception_d, 1024, inter_channels=128, decoder=1)
         self.layer_block_4 = self._make_layer(inception_c, 3, inter_channels=64, channels_7x7=64)
-        self.expand_grid_2 = self._alter_grid_layer(inception_b, 512, inter_channels=96, decoder=1)
+        self.expand_grid_2 = self._alter_grid_layer(inception_b, 256, inter_channels=64, decoder=1)
         self.layer_block_5 = self._make_layer(inception_a, 3, inter_channels=32)
 
-        self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
-        self.deconv1 = deconv_block(192, self.inter_channels, 4, 2, padding=1)
-        self.conv2 = nn.Conv2d(self.inter_channels, 1, 1, bias=False)
+        self.channel_deconv1 = deconv_block(192, self.inter_channels*2, 1, 1)
+        self.spatial_deconv1 = deconv_block(self.inter_channels*2, self.inter_channels*2, 4, 2, padding=1)
+        self.channel_deconv2 = deconv_block(96, self.inter_channels, 1, 1)
+        self.spatial_deconv2 = deconv_block(self.inter_channels, self.inter_channels, 4, 2, padding=1)
+
+        self.out_conv = nn.Conv2d(33, 1, 1, bias=True)
 
     def forward(self, x):
         
-        x = self.conv1(x)
-        skip_1 = x
-        x = self.maxpool(x)
-        x = self.layer_block_1(x)
-        skip_2 = x
-        x = self.reduce_grid_1(x)
-        skip_3 = x
-        x = self.layer_block_2(x)
-        skip_4 = x
-        x = self.reduce_grid_2(x)
-        skip_5 = x
-        x = self.layer_block_3(x)
-        x = self.expand_grid_1(torch.cat((skip_5,x),1))
-        x = self.layer_block_4(torch.cat((skip_4,x),1))
-        x = self.expand_grid_2(torch.cat((skip_3,x),1))
-        x = self.layer_block_5(torch.cat((skip_2,x),1))
-        x = self.upsample(x)
-        x = self.deconv1(torch.cat((skip_1,x),1))
-        x = self.conv2(x)
+        identity = x.clone()
+        x = self.channel_conv1(x)
+        conv1 = self.spatial_conv1(x)
+        x = self.channel_conv2(conv1)
+        conv2 = self.spatial_conv2(x)
 
-        return x
+        x = self.layer_block_1(conv2)
+        x = self.reduce_grid_1(x)
+        x = self.layer_block_2(x)
+        x = self.reduce_grid_2(x)
+        x = self.layer_block_3(x)
+        x = self.expand_grid_1(x)
+        x = self.layer_block_4(x)
+        x = self.expand_grid_2(x)
+        x = self.layer_block_5(x)
+
+        x = self.channel_deconv1(torch.cat((conv2,x),1))
+        x = self.spatial_deconv1(x)
+        x = self.channel_deconv2(torch.cat((conv1,x),1))
+        x = self.spatial_deconv2(x)
+        out = self.out_conv(torch.cat((identity,x),1))
+
+        return out
 
     def _make_layer(self, ri_block: Optional[Callable[..., nn.Module]], num_residual_blocks, inter_channels, channels_7x7=None):
         identity_downsample = None
