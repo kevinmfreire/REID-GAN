@@ -33,7 +33,7 @@ parser.add_argument('--save_path', type=str, default='./rigan_model/')
 # parser.add_argument('--save_path', type=str, default='./NCSSMP/')
 parser.add_argument('--test_patient', type=str, default='L064')
 
-parser.add_argument('--save_iters', type=int, default=10)
+parser.add_argument('--save_iters', type=int, default=50)
 parser.add_argument('--print_iters', type=int, default=50)
 parser.add_argument('--decay_iters', type=int, default=6000)
 parser.add_argument('--gan_alt', type=int, default=2)
@@ -48,7 +48,7 @@ parser.add_argument('--image_size', type=int, default=512)
 parser.add_argument('--lr', type=float, default=2e-4) # 5e-5 without decaying rate
 parser.add_argument('--num_epochs', type=int, default=500)
 parser.add_argument('--num_workers', type=int, default=4)
-parser.add_argument('--load_chkpt', type=bool, default=False)
+parser.add_argument('--load_chkpt', type=bool, default=True)
 
 parser.add_argument('--norm_range_min', type=float, default=-1024.0)
 parser.add_argument('--norm_range_max', type=float, default=3071.0)
@@ -76,7 +76,7 @@ image_size = args.image_size if args.patch_size == None else args.patch_size
 
 if args.load_chkpt:
 	print('Loading Chekpoint')
-	whole_model = torch.load(args.save_path+ 'latest_ckpt.pth.tar', map_location=torch.device('cuda' if cuda_is_present else 'cpu'))
+	whole_model = torch.load(args.save_path+ 'epoch_10_ckpt.pth.tar', map_location=torch.device('cuda' if cuda_is_present else 'cpu'))
 	netG_state_dict,optG_state_dict = whole_model['netG_state_dict'], whole_model['optG_state_dict']
 	netD_state_dict,optD_state_dict = whole_model['netD_state_dict'], whole_model['optD_state_dict']
 	Gnet = RIGAN()
