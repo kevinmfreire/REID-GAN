@@ -100,7 +100,7 @@ cuda_is_present = True if torch.cuda.is_available() else False
 Tensor = torch.cuda.FloatTensor if cuda_is_present else torch.FloatTensor
 
 # load   
-whole_model = torch.load(args.save_path + 'latest_ckpt.pth.tar', map_location=torch.device('cuda' if cuda_is_present else 'cpu'))
+whole_model = torch.load(args.save_path + 'epoch_25_ckpt.pth.tar', map_location=torch.device('cuda' if cuda_is_present else 'cpu'))
 netG_state_dict= whole_model['netG_state_dict']
 epoch = whole_model['epoch']
 netG = RIGAN()
@@ -142,23 +142,23 @@ with torch.no_grad():
         pred_rmse_avg += pred_result[2]
 
         # save result figure
-        # if not os.path.exists(args.results_path):
-        #     os.makedirs(args.results_path)
-        #     print('Create path : {}'.format(args.results_path))
+        if not os.path.exists(args.results_path):
+            os.makedirs(args.results_path)
+            print('Create path : {}'.format(args.results_path))
 
-        # if args.result_fig:
-        #     save_fig(x, y, pred, i, original_result, pred_result)
-        #     pred=normalize_(pred.numpy())
-        #     pred=torch.Tensor(pred)
-        #     utils.save_image(pred, os.path.join(args.results_path, 'Pred_{}.png'.format(i)))
+        if args.result_fig:
+            save_fig(x, y, pred, i, original_result, pred_result)
+            pred=normalize_(pred.numpy())
+            pred=torch.Tensor(pred)
+            utils.save_image(pred, os.path.join(args.results_path, 'Pred_{}.png'.format(i)))
 
         printProgressBar(i, len(data_loader),
                          prefix="Compute measurements ..",
                          suffix='Complete', length=25)
-    print('\n')
-    print('Original\nPSNR avg: {:.4f} \nSSIM avg: {:.4f} \nRMSE avg: {:.4f}'.format(ori_psnr_avg/len(data_loader), 
-                                                                                    ori_ssim_avg/len(data_loader), 
-                                                                                    ori_rmse_avg/len(data_loader)))
-    print('After learning\nPSNR avg: {:.4f} \nSSIM avg: {:.4f} \nRMSE avg: {:.4f}'.format(pred_psnr_avg/len(data_loader), 
-                                                                                          pred_ssim_avg/len(data_loader), 
-                                                                                          pred_rmse_avg/len(data_loader)))
+    # print('\n')
+    # print('Original\nPSNR avg: {:.4f} \nSSIM avg: {:.4f} \nRMSE avg: {:.4f}'.format(ori_psnr_avg/len(data_loader), 
+    #                                                                                 ori_ssim_avg/len(data_loader), 
+    #                                                                                 ori_rmse_avg/len(data_loader)))
+    # print('After learning\nPSNR avg: {:.4f} \nSSIM avg: {:.4f} \nRMSE avg: {:.4f}'.format(pred_psnr_avg/len(data_loader), 
+    #                                                                                       pred_ssim_avg/len(data_loader), 
+    #                                                                                       pred_rmse_avg/len(data_loader)))

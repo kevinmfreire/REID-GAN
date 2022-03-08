@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import argparse
 from math import exp
 from torch.autograd import Variable
+from torch import linalg
 import torchvision.models as models
 from torchvision.models._utils import IntermediateLayerGetter
 
@@ -90,14 +91,18 @@ class MPL(torch.nn.Module):
         for layer in vgg19_layers:
             feature_target = get_feature_layer_vgg16(target, layer, self.model)
             feature_prediction = get_feature_layer_vgg16(prediction, layer, self.model)
-            _, C, H, W = feature_target.size()
-            feature_count = C*W*H
+            _, _, H, W = feature_target.size()
+            feature_count = W*H
             feature_difference = feature_target - feature_prediction
-            feature_loss = feature_difference.norm(p=2) / float(feature_count)
-            perceptual_loss += feature_loss
+            # feature_loss = feature_difference.norm(dim=1, p=2) / float(feature_count)
+            feature_loss = linalg.norm(feature_difference, dim=1, ord=2) / float(feature_count)
+            perceptual_loss += feature_loss.mean()
         return perceptual_loss
 
 class SSIM(torch.nn.Module):
+    """
+    The Dissimilarity Loss funciton
+    """
     def __init__(self, window_size = 11, size_average = True):
         super(SSIM, self).__init__()
         self.window_size = window_size
@@ -108,7 +113,8 @@ class SSIM(torch.nn.Module):
         self.window.to(torch.device('cuda' if cuda_is_present else 'cpu'))
     def forward(self, y, pred):
         ssim = compute_SSIM(y, pred, self.window_size, self.channel, self.size_average)
-        return 1.0-ssim/2.0
+        dssim = (1.0 - ssim) / 2.0
+        return dssim
 
 class DLoss(nn.Module):
     """
@@ -120,6 +126,7 @@ class DLoss(nn.Module):
         
     def forward(self, Dy, Dg):
         return self.activation(1-torch.mean(Dy)) + self.activation(1+torch.mean(Dg))
+        # return -torch.mean(Dy) + torch.mean(Dg)
 
 class GLoss(nn.Module):
     """

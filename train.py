@@ -140,6 +140,9 @@ for epoch in tq_epoch:
 			x = x.view(-1, 1, args.patch_size, args.patch_size)
 			y = y.view(-1, 1, args.patch_size, args.patch_size)
 
+		mean = y.mean()
+		std = y.std()
+
 		# If batch training without any patch size
 		if args.batch_size and args.patch_size == None:
 			x = x.view(-1, 1, shape_, shape_)
@@ -150,6 +153,10 @@ for epoch in tq_epoch:
 
 		# Predictions
 		pred = Gnet(x)
+
+		# Normalize generated and ground truth images based on meand and std of ground truth
+		# norm_y = (y - mean) / std
+		# norm_pred = (pred - mean) / std
 
 		for _ in range(5):
 			Dnet.parameters(True)
@@ -170,7 +177,7 @@ for epoch in tq_epoch:
 		ssim_loss = ssim(y, pred)
 		mp_loss = multi_perceptual(y, pred)
 		g_loss = Gloss(Dg)
-		gloss = 0.5*g_loss + 0.1*mp_loss + 0.4*ssim_loss
+		gloss = 0.4*g_loss + 0.1*mp_loss + 0.5*ssim_loss
 		gloss.backward(retain_graph=True)
 		optimizer_generator.step()
 
