@@ -4,12 +4,13 @@ import numpy as np
 
 # Visualize one loss only
 path = './rigan_model/'
-# total_loss = np.load(path + 'total_loss.npy', allow_pickle=True)
-total_loss = np.load(path + 'loss_arr.npy', allow_pickle=True)
-# loss = np.load(path + 'loss_arr (2).npy', allow_pickle=True)
-# total_loss1 = np.concatenate((total_loss, loss[:5]), axis=0)
+total_loss = np.load(path + 'total_loss.npy', allow_pickle=True)
+# total_loss = np.load(path + 'loss_arr.npy', allow_pickle=True)
+# loss = np.load(path + 'loss_arr (1).npy', allow_pickle=True)
+# total_loss1 = np.concatenate((total_loss, loss), axis=0)
+# losses = np.array(total_loss1)
 # save_loss = path + 'total_loss.npy'
-# np.save(save_loss, total_loss1, allow_pickle=True)
+# np.save(save_loss, losses[:51], allow_pickle=True)
 # print(total_loss)
 # print(loss[:5])
 # quit()
@@ -31,6 +32,9 @@ axs[0].set(ylabel="Loss")
 axs[1].set(xlabel="Epoch", ylabel="Loss")
 fig.legend()
 plt.savefig('{}loss_plot.png'.format(path))
+
+# save_loss = './rigan_model/loss_arr.npy'
+# np.save(save_loss, losses[:26], allow_pickle=True)
 
 ################################ Visual comparison of losses between different methods #######################################
 

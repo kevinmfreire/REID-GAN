@@ -8,6 +8,9 @@ from typing import Callable, Any, Optional, Tuple, List
 import warnings
     
 class ImageDiscriminator(nn.Module):
+    """
+    Discriminator Network
+    """
     def __init__(self):
         super(ImageDiscriminator, self).__init__()
         self.inter_channels = 64
@@ -32,6 +35,9 @@ class ImageDiscriminator(nn.Module):
         return x
 
 class RIGAN(nn.Module):
+    """
+    Residual Inception Generative Adversarial Network (RIGAN)
+    """
     def __init__(self, inception_blocks: Optional[List[Callable[..., nn.Module]]] = None):
         super(RIGAN, self).__init__()
         if inception_blocks is None:
@@ -54,15 +60,15 @@ class RIGAN(nn.Module):
         self.channel_conv2 = conv_block(self.inter_channels, self.inter_channels*2, 1, 1)
         self.spatial_conv2 = conv_block(self.inter_channels*2, self.inter_channels*2, 3, 2, padding=1)
 
-        self.layer_block_1 = self._make_layer(inception_a, 1, inter_channels=32)
+        self.layer_block_1 = self._make_layer(inception_a, 2, inter_channels=32)
         self.reduce_grid_1 = self._alter_grid_layer(inception_b, 128, inter_channels=64)
-        self.layer_block_2 = self._make_layer(inception_c, 1, inter_channels=64, channels_7x7=64)
+        self.layer_block_2 = self._make_layer(inception_c, 2, inter_channels=64, channels_7x7=64)
         self.reduce_grid_2 = self._alter_grid_layer(inception_d, 256, inter_channels=128)
         self.layer_block_3 = self._make_layer(inception_e, 1, inter_channels=256)
         self.expand_grid_1 = self._alter_grid_layer(inception_d, 1024, inter_channels=128, decoder=1)
-        self.layer_block_4 = self._make_layer(inception_c, 1, inter_channels=64, channels_7x7=64)
+        self.layer_block_4 = self._make_layer(inception_c, 2, inter_channels=64, channels_7x7=64)
         self.expand_grid_2 = self._alter_grid_layer(inception_b, 256, inter_channels=64, decoder=1)
-        self.layer_block_5 = self._make_layer(inception_a, 1, inter_channels=32)
+        self.layer_block_5 = self._make_layer(inception_a, 2, inter_channels=32)
 
         self.channel_deconv1 = deconv_block(192, self.inter_channels*2, 1, 1)
         self.spatial_deconv1 = deconv_block(self.inter_channels*2, self.inter_channels*2, 4, 2, padding=1)
