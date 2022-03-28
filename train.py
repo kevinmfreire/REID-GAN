@@ -48,7 +48,7 @@ parser.add_argument('--image_size', type=int, default=512)
 parser.add_argument('--lr', type=float, default=2e-4) # 5e-5 without decaying rate
 parser.add_argument('--num_epochs', type=int, default=500)
 parser.add_argument('--num_workers', type=int, default=4)
-parser.add_argument('--load_chkpt', type=bool, default=True)
+parser.add_argument('--load_chkpt', type=bool, default=False)
 
 parser.add_argument('--norm_range_min', type=float, default=-1024.0)
 parser.add_argument('--norm_range_max', type=float, default=3071.0)
@@ -112,6 +112,7 @@ Dloss = DLoss()
 Gloss = GLoss()
 multi_perceptual = MPL()
 ssim = SSIM()
+comp = CompoundLoss()
 
 losses = []
 start_time = time.time()
@@ -173,9 +174,10 @@ for epoch in tq_epoch:
 		Dnet.parameters(False)
 		optimizer_generator.zero_grad()
 		Gnet.zero_grad()
+		# comp_loss = comp(pred,y)
+		mp_loss = multi_perceptual(y, pred)
 		Dg = Dnet(pred)
 		ssim_loss = ssim(y, pred)
-		mp_loss = multi_perceptual(y, pred)
 		g_loss = Gloss(Dg)
 		gloss = 0.4*g_loss + 0.1*mp_loss + 0.5*ssim_loss
 		gloss.backward(retain_graph=True)

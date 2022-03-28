@@ -7,6 +7,7 @@ from torch.autograd import Variable
 from torch import linalg
 import torchvision.models as models
 from torchvision.models._utils import IntermediateLayerGetter
+from torch.nn.modules.loss import _Loss
 
 # Check CUDA's presence
 cuda_is_present = True if torch.cuda.is_available() else False
@@ -40,15 +41,6 @@ def get_feature_layer_vgg16(image, layer, model):
     image_feature = output_feature(image)
     return image_feature['feat_layer_{}'.format(layer)]
 
-def get_feature_loss(target, prediction, layer, model):
-    feature_transformed_target = get_feature_layer_vgg16(target, layer, model)
-    feature_transformed_prediction = get_feature_layer_vgg16(prediction, layer, model)
-    _, C, H, W = feature_transformed_target.size()
-    feature_count = C*W*H
-    feature_difference = feature_transformed_prediction - feature_transformed_target
-    feature_loss = feature_difference.norm(p=2) / float(feature_count)
-    return feature_loss
-
 def compute_SSIM(img1, img2, window_size, channel, size_average=True):
     # referred from https://github.com/Po-Hsun-Su/pytorch-ssim
     if len(img1.size()) == 2:
@@ -76,6 +68,61 @@ def compute_SSIM(img1, img2, window_size, channel, size_average=True):
     else:
         return ssim_map.mean(1).mean(1).mean(1)
 
+class Vgg16FeatureExtractor(nn.Module):
+    
+    def __init__(self, layers=[3, 8, 15, 22, 29],pretrained=False, progress=True, **kwargs):
+        super(Vgg16FeatureExtractor, self).__init__()
+        self.layers=layers
+        self.model = models.vgg16(pretrained, progress, **kwargs)
+        del self.model.avgpool
+        del self.model.classifier
+        self.return_layers = {'{}'.format(self.layers[i]): 'feat_layer_{}'.format(self.layers[i]) for i in range(len(self.layers))}
+        self.model = IntermediateLayerGetter(self.model.features, return_layers=self.return_layers)
+
+    def forward(self, x):
+        feats = list()
+        out = self.model(x)     
+        for i in range(len(self.layers)):
+            feats.append(out['feat_layer_{}'.format(self.layers[i])])
+        return feats
+
+class CompoundLoss(_Loss):
+    
+    def __init__(self, blocks=[1, 2, 3, 4, 5], mse_weight=1, vgg_weight=0.01):
+        super(CompoundLoss, self).__init__()
+
+        self.mse_weight = mse_weight
+        self.vgg_weight = vgg_weight
+
+        self.blocks = blocks
+        self.model = Vgg16FeatureExtractor(pretrained=True)
+
+        if torch.cuda.is_available():
+            self.model = self.model.cuda()
+        self.model.eval()
+
+        self.perceptual = nn.MSELoss(reduction='sum')
+        self.mse = nn.MSELoss()
+
+    def forward(self, input, target):
+        loss_value = 0
+
+        input_feats = self.model(torch.cat([input, input, input], dim=1))
+        target_feats = self.model(torch.cat([target, target, target], dim=1))
+
+        feats_num = len(self.blocks)
+        for idx in range(feats_num):
+            input, target = input_feats[idx], target_feats[idx]
+            _, d, w, h = target.size()
+            feat_count = float(d*w*h)
+            loss_value += self.perceptual(input, target) / feat_count
+        loss_value /= feats_num
+
+        # loss = self.mse_weight * self.mse(input, target) + self.resnet_weight * loss_value
+        loss = self.vgg_weight * loss_value
+
+        return loss
+
 class MPL(torch.nn.Module):
     """
     The Multi Perceptual Loss Function
@@ -84,7 +131,7 @@ class MPL(torch.nn.Module):
         super(MPL, self).__init__()
         self.model = models.vgg16(pretrained=True)
         self.model.to(torch.device('cuda' if cuda_is_present else 'cpu'))
-
+        self.model.eval()
     def forward(self, target, prediction):
         perceptual_loss = 0
         vgg19_layers = [3, 8, 15, 22, 29] # layers: 3, 8, 15, 22, 29
@@ -99,7 +146,7 @@ class MPL(torch.nn.Module):
             perceptual_loss += feature_loss.mean()
         return perceptual_loss
 
-class SSIM(torch.nn.Module):
+class SSIM(_Loss):
     """
     The Dissimilarity Loss funciton
     """
