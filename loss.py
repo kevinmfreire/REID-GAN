@@ -88,7 +88,7 @@ class Vgg16FeatureExtractor(nn.Module):
 
 class CompoundLoss(_Loss):
     
-    def __init__(self, blocks=[1, 2, 3, 4, 5], mse_weight=1, vgg_weight=0.01):
+    def __init__(self, blocks=[1, 2, 3, 4, 5], mse_weight=1, vgg_weight=0.0000001):
         super(CompoundLoss, self).__init__()
 
         self.mse_weight = mse_weight
@@ -117,7 +117,7 @@ class CompoundLoss(_Loss):
             feat_count = float(d*w*h)
             loss_value += self.perceptual(input, target) / feat_count
         loss_value /= feats_num
-
+        
         # loss = self.mse_weight * self.mse(input, target) + self.resnet_weight * loss_value
         loss = self.vgg_weight * loss_value
 

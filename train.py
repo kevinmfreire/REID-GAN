@@ -159,27 +159,27 @@ for epoch in tq_epoch:
 		# norm_y = (y - mean) / std
 		# norm_pred = (pred - mean) / std
 
-		for _ in range(5):
-			Dnet.parameters(True)
-			optimizer_discriminator.zero_grad()
-			Dnet.zero_grad()
-			pos_neg_imgs = torch.cat([y, pred], dim=0)
-			pred_pos_neg = Dnet(pos_neg_imgs)
-			Dy, Dg = torch.chunk(pred_pos_neg, 2, dim=0)
-			dloss = Dloss(Dy,Dg)
-			dloss.backward(retain_graph=True)
-			optimizer_discriminator.step()
+		# for _ in range(5):
+		# 	Dnet.parameters(True)
+		# 	optimizer_discriminator.zero_grad()
+		# 	Dnet.zero_grad()
+		# 	pos_neg_imgs = torch.cat([y, pred], dim=0)
+		# 	pred_pos_neg = Dnet(pos_neg_imgs)
+		# 	Dy, Dg = torch.chunk(pred_pos_neg, 2, dim=0)
+		# 	dloss = Dloss(Dy,Dg)
+		# 	dloss.backward(retain_graph=True)
+		# 	optimizer_discriminator.step()
 
 		# Training generator
 		Dnet.parameters(False)
 		optimizer_generator.zero_grad()
 		Gnet.zero_grad()
-		# comp_loss = comp(pred,y)
-		mp_loss = multi_perceptual(y, pred)
+		comp_loss = comp(pred,y)
+		# mp_loss = multi_perceptual(y, pred)
 		Dg = Dnet(pred)
 		ssim_loss = ssim(y, pred)
 		g_loss = Gloss(Dg)
-		gloss = 0.4*g_loss + 0.1*mp_loss + 0.5*ssim_loss
+		gloss = 0.4*g_loss + 0.3*comp_loss + 0.3*ssim_loss
 		gloss.backward(retain_graph=True)
 		optimizer_generator.step()
 
