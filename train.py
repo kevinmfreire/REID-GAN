@@ -51,7 +51,7 @@ parser.add_argument('--num_workers', type=int, default=4)
 parser.add_argument('--load_chkpt', type=bool, default=False)
 
 parser.add_argument('--norm_range_min', type=float, default=-1024.0)
-parser.add_argument('--norm_range_max', type=float, default=3071.0)
+parser.add_argument('--norm_range_max', type=float, default=3072.0)
 
 args = parser.parse_args()
 
@@ -71,6 +71,10 @@ Tensor = torch.cuda.FloatTensor if cuda_is_present else torch.FloatTensor
 
 def to_cuda(data):
 	return data.cuda() if cuda_is_present else data
+
+def normalize_(image):
+	image = (image - args.norm_range_min) / (args.norm_range_max - args.norm_range_min)
+	return image
 
 image_size = args.image_size if args.patch_size == None else args.patch_size
 
@@ -110,9 +114,9 @@ else:
 # Losses
 Dloss = DLoss()
 Gloss = GLoss()
-multi_perceptual = MPL()
+# multi_perceptual = MPL()
 ssim = SSIM()
-comp = CompoundLoss()
+comp = PerceptualLoss()
 
 losses = []
 start_time = time.time()
@@ -141,9 +145,6 @@ for epoch in tq_epoch:
 			x = x.view(-1, 1, args.patch_size, args.patch_size)
 			y = y.view(-1, 1, args.patch_size, args.patch_size)
 
-		mean = y.mean()
-		std = y.std()
-
 		# If batch training without any patch size
 		if args.batch_size and args.patch_size == None:
 			x = x.view(-1, 1, shape_, shape_)
@@ -155,31 +156,26 @@ for epoch in tq_epoch:
 		# Predictions
 		pred = Gnet(x)
 
-		# Normalize generated and ground truth images based on meand and std of ground truth
-		# norm_y = (y - mean) / std
-		# norm_pred = (pred - mean) / std
-
-		# for _ in range(5):
-		# 	Dnet.parameters(True)
-		# 	optimizer_discriminator.zero_grad()
-		# 	Dnet.zero_grad()
-		# 	pos_neg_imgs = torch.cat([y, pred], dim=0)
-		# 	pred_pos_neg = Dnet(pos_neg_imgs)
-		# 	Dy, Dg = torch.chunk(pred_pos_neg, 2, dim=0)
-		# 	dloss = Dloss(Dy,Dg)
-		# 	dloss.backward(retain_graph=True)
-		# 	optimizer_discriminator.step()
+		for _ in range(5):
+			Dnet.parameters(True)
+			optimizer_discriminator.zero_grad()
+			Dnet.zero_grad()
+			pos_neg_imgs = torch.cat([y, pred], dim=0)
+			pred_pos_neg = Dnet(pos_neg_imgs)
+			Dy, Dg = torch.chunk(pred_pos_neg, 2, dim=0)
+			dloss = Dloss(Dy,Dg)
+			dloss.backward(retain_graph=True)
+			optimizer_discriminator.step()
 
 		# Training generator
 		Dnet.parameters(False)
 		optimizer_generator.zero_grad()
 		Gnet.zero_grad()
-		comp_loss = comp(pred,y)
-		# mp_loss = multi_perceptual(y, pred)
 		Dg = Dnet(pred)
-		ssim_loss = ssim(y, pred)
 		g_loss = Gloss(Dg)
-		gloss = 0.4*g_loss + 0.3*comp_loss + 0.3*ssim_loss
+		mp_loss = comp(pred,y)
+		ssim_loss = ssim(y, pred)
+		gloss = g_loss + mp_loss + ssim_loss
 		gloss.backward(retain_graph=True)
 		optimizer_generator.step()
 

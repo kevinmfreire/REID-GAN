@@ -86,10 +86,10 @@ class Vgg16FeatureExtractor(nn.Module):
             feats.append(out['feat_layer_{}'.format(self.layers[i])])
         return feats
 
-class CompoundLoss(_Loss):
+class PerceptualLoss(_Loss):
     
-    def __init__(self, blocks=[1, 2, 3, 4, 5], mse_weight=1, vgg_weight=0.0000001):
-        super(CompoundLoss, self).__init__()
+    def __init__(self, blocks=[1, 2, 3, 4, 5], mse_weight=1, vgg_weight=0.02):
+        super(PerceptualLoss, self).__init__()
 
         self.mse_weight = mse_weight
         self.vgg_weight = vgg_weight
@@ -102,7 +102,7 @@ class CompoundLoss(_Loss):
         self.model.eval()
 
         self.perceptual = nn.MSELoss(reduction='sum')
-        self.mse = nn.MSELoss()
+        # self.mse = nn.MSELoss()
 
     def forward(self, input, target):
         loss_value = 0
@@ -150,20 +150,21 @@ class SSIM(_Loss):
     """
     The Dissimilarity Loss funciton
     """
-    def __init__(self, window_size = 11, size_average = True):
+    def __init__(self, window_size = 11, size_average = True, ssim_weight = 0.48):
         super(SSIM, self).__init__()
+        self.ssim_weight = ssim_weight
         self.window_size = window_size
         self.size_average = size_average
         self.channel = 1
-
         self.window = create_window(window_size, self.channel)
         self.window.to(torch.device('cuda' if cuda_is_present else 'cpu'))
+
     def forward(self, y, pred):
         ssim = compute_SSIM(y, pred, self.window_size, self.channel, self.size_average)
         dssim = (1.0 - ssim) / 2.0
-        return dssim
+        return self.ssim_weight * dssim
 
-class DLoss(nn.Module):
+class DLoss(_Loss):
     """
     The loss for discriminator
     """
@@ -172,16 +173,16 @@ class DLoss(nn.Module):
         self.activation = nn.ReLU()
         
     def forward(self, Dy, Dg):
-        return self.activation(1-torch.mean(Dy)) + self.activation(1+torch.mean(Dg))
-        # return -torch.mean(Dy) + torch.mean(Dg)
+        # return self.activation(1-torch.mean(Dy)) + self.activation(1+torch.mean(Dg))
+        return -torch.mean(Dy) + torch.mean(Dg)
 
-class GLoss(nn.Module):
+class GLoss(_Loss):
     """
     The loss for generator
     """
-    def __init__(self, weight=1):
+    def __init__(self, weight=0.50):
         super(GLoss, self).__init__()
+        self.weight = weight
 
     def forward(self, Dg):
-        loss = -torch.mean(Dg)
-        return loss
+        return -self.weight * torch.mean(Dg)

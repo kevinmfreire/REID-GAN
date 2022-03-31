@@ -64,12 +64,12 @@ def to_cuda(data):
     	return data.cuda() if cuda_is_present else data
 
 def denormalize_(image):
-    image = image * (args.norm_range_max - args.norm_range_min) + args.norm_range_min
+    image = (image * (args.norm_range_max - args.norm_range_min)) + args.norm_range_min
     return image
 
 def normalize_(image, MIN_B=-160.0, MAX_B=240.0):
     image = (image - MIN_B) / (MAX_B - MIN_B)
-    return image
+    return 
 
 def trunc(mat):
     mat[mat <= args.trunc_min] = args.trunc_min
@@ -100,7 +100,7 @@ cuda_is_present = True if torch.cuda.is_available() else False
 Tensor = torch.cuda.FloatTensor if cuda_is_present else torch.FloatTensor
 
 # load   
-whole_model = torch.load(args.save_path + 'epoch_65_ckpt.pth.tar', map_location=torch.device('cuda' if cuda_is_present else 'cpu'))
+whole_model = torch.load(args.save_path + 'epoch_50_ckpt.pth.tar', map_location=torch.device('cuda' if cuda_is_present else 'cpu'))
 netG_state_dict= whole_model['netG_state_dict']
 epoch = whole_model['epoch']
 netG = RIGAN()
@@ -125,9 +125,9 @@ with torch.no_grad():
         pred = netG(x)
 
         # Reshaping pred for computing measurements
-        x = trunc(x.view(shape_, shape_).cpu().detach())
-        y = trunc(y.view(shape_, shape_).cpu().detach())
-        pred = trunc(pred.view(shape_, shape_).cpu().detach())
+        x = trunc(denormalize_(x.view(shape_, shape_).cpu().detach()))
+        y = trunc(denormalize_(y.view(shape_, shape_).cpu().detach()))
+        pred = trunc(denormalize_(pred.view(shape_, shape_).cpu().detach()))
 
         # Computing Measures
         data_range = args.trunc_max - args.trunc_min
