@@ -97,7 +97,7 @@ class Vgg16FeatureExtractor(nn.Module):
 
 class PerceptualLoss(_Loss):
     
-    def __init__(self, blocks=[1, 2, 3, 4, 5], mse_weight=1, vgg_weight=0.01):
+    def __init__(self, blocks=[1, 2, 3, 4, 5], mse_weight=1, vgg_weight=1.0):
         super(PerceptualLoss, self).__init__()
 
         self.mse_weight = mse_weight
@@ -169,9 +169,9 @@ class SSIM(nn.Module):
         self.window.to(torch.device('cuda' if cuda_is_present else 'cpu'))
 
     def forward(self, y, pred):
-        y, pred = denormalize_(y), denormalize_(pred)
+        # y, pred = denormalize_(y), denormalize_(pred)
         ssim = compute_SSIM(y, pred, self.window_size, self.channel, self.size_average)
-        dssim = 1.0 - ssim
+        dssim = (1.0-ssim)/2.0
         return self.ssim_weight * dssim
 
 class DLoss(_Loss):
@@ -183,8 +183,8 @@ class DLoss(_Loss):
         self.activation = nn.ReLU()
         
     def forward(self, Dy, Dg):
-        # return self.activation(1-torch.mean(Dy)) + self.activation(1+torch.mean(Dg))
-        return -torch.mean(Dy) + torch.mean(Dg)
+        return self.activation(1-torch.mean(Dy)) + self.activation(1+torch.mean(Dg))
+        # return -torch.mean(Dy) + torch.mean(Dg)
 
 class GLoss(_Loss):
     """
@@ -195,4 +195,4 @@ class GLoss(_Loss):
         self.weight = weight
 
     def forward(self, Dg):
-        return self.weight * (1.0 - torch.mean(Dg))
+        return -self.weight * torch.mean(Dg)
