@@ -152,31 +152,28 @@ for epoch in tq_epoch:
 		# Predictions
 		pred = Gnet(x)
 
-		# for _ in range(5):
-		# 	Dnet.parameters(True)
-		# 	optimizer_discriminator.zero_grad()
-		# 	Dnet.zero_grad()
-		# 	pos_neg_imgs = torch.cat([y, pred], dim=0)
-		# 	pred_pos_neg = Dnet(pos_neg_imgs)
-		# 	Dy, Dg = torch.chunk(pred_pos_neg, 2, dim=0)
-		# 	dloss = Dloss(Dy,Dg)
-		# 	dloss.backward(retain_graph=True)
-		# 	optimizer_discriminator.step()
+		for _ in range(5):
+			Dnet.parameters(True)
+			optimizer_discriminator.zero_grad()
+			Dnet.zero_grad()
+			pos_neg_imgs = torch.cat([y, pred], dim=0)
+			pred_pos_neg = Dnet(pos_neg_imgs)
+			Dy, Dg = torch.chunk(pred_pos_neg, 2, dim=0)
+			dloss = Dloss(Dy,Dg)
+			dloss.backward(retain_graph=True)
+			optimizer_discriminator.step()
 
 		# Training generator
-		for _ in range(5):
-			Dnet.parameters(False)
-			optimizer_generator.zero_grad()
-			Gnet.zero_grad()
-			Dg = Dnet(pred)
-			g_loss = Gloss(Dg)
-			print(g_loss)
-			mp_loss = comp(pred,y)
-			ssim_loss = ssim(y, pred)
-			gloss = g_loss + mp_loss + ssim_loss
-			gloss.backward(retain_graph=True)
-			optimizer_generator.step()
-		quit()
+		Dnet.parameters(False)
+		optimizer_generator.zero_grad()
+		Gnet.zero_grad()
+		Dg = Dnet(pred)
+		g_loss = Gloss(Dg)
+		mp_loss = comp(pred,y)
+		ssim_loss = ssim(y, pred)
+		gloss = g_loss + mp_loss + ssim_loss
+		gloss.backward(retain_graph=True)
+		optimizer_generator.step()
 
 		dloss_sum += dloss.detach().item()
 		gloss_sum += gloss.detach().item()

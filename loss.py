@@ -195,4 +195,4 @@ class GLoss(_Loss):
         self.weight = weight
 
     def forward(self, Dg):
-        return self.weight * (-torch.mean(Dg) + 1.0)
+        return -self.weight * torch.mean(Dg)
