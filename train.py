@@ -171,7 +171,7 @@ for epoch in tq_epoch:
 		g_loss = Gloss(Dg)
 		mp_loss = comp(pred,y)
 		ssim_loss = ssim(y, pred)
-		gloss = g_loss + mp_loss + ssim_loss
+		gloss = 0.4*g_loss + 0.1*mp_loss + 0.5*ssim_loss
 		gloss.backward(retain_graph=True)
 		optimizer_generator.step()
 

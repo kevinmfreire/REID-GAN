@@ -97,7 +97,7 @@ class Vgg16FeatureExtractor(nn.Module):
 
 class PerceptualLoss(_Loss):
     
-    def __init__(self, blocks=[1, 2, 3, 4, 5], mse_weight=1, vgg_weight=0.02):
+    def __init__(self, blocks=[1, 2, 3, 4, 5], mse_weight=1, vgg_weight=0.01):
         super(PerceptualLoss, self).__init__()
 
         self.mse_weight = mse_weight
@@ -159,7 +159,7 @@ class SSIM(nn.Module):
     """
     The Dissimilarity Loss funciton
     """
-    def __init__(self, window_size = 11, size_average = True, ssim_weight = 0.48):
+    def __init__(self, window_size = 11, size_average = True, ssim_weight = 1.0):
         super(SSIM, self).__init__()
         self.ssim_weight = ssim_weight
         self.window_size = window_size
@@ -190,9 +190,9 @@ class GLoss(_Loss):
     """
     The loss for generator
     """
-    def __init__(self, weight=0.50):
+    def __init__(self, weight=1.0):
         super(GLoss, self).__init__()
         self.weight = weight
 
     def forward(self, Dg):
-        return -self.weight * torch.mean(Dg)
+        return self.weight * (1.0 - torch.mean(Dg))
