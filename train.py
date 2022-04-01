@@ -109,10 +109,9 @@ else:
 
 # Losses
 Dloss = DLoss()
-Gloss = GLoss()
-# multi_perceptual = MPL()
-ssim = SSIM()
-comp = PerceptualLoss()
+criterion = CompoundLoss()
+Dloss = to_cuda(Dloss)
+criterion = to_cuda(criterion)
 
 losses = []
 start_time = time.time()
@@ -167,11 +166,8 @@ for epoch in tq_epoch:
 		Dnet.parameters(False)
 		optimizer_generator.zero_grad()
 		Gnet.zero_grad()
-		Dg = Dnet(pred)
-		g_loss = Gloss(Dg)
-		mp_loss = comp(pred,y)
-		ssim_loss = ssim(y, pred)
-		gloss = 0.5*g_loss + 0.1*mp_loss + 0.4*ssim_loss
+		D_gen = Dnet(pred)
+		gloss = criterion(pred, y, D_gen)
 		gloss.backward(retain_graph=True)
 		optimizer_generator.step()
 

@@ -16,15 +16,6 @@ Tensor = torch.cuda.FloatTensor if cuda_is_present else torch.FloatTensor
 def to_cuda(data):
     	return data.cuda() if cuda_is_present else data
 
-def denormalize_(image, MIN_B=-1024.0, MAX_B=3072.0):
-    image = image * (MAX_B - MIN_B) + MIN_B
-    return image
-
-def trunc(mat, MIN_B=-160, MAX_B=240):
-    mat[mat <= MIN_B] = MIN_B
-    mat[mat >= MAX_B] = MAX_B
-    return mat
-
 def gaussian(window_size, sigma):
     gauss = torch.Tensor([exp(-(x - window_size//2)**2/float(2*sigma**2)) for x in range(window_size)])
     return gauss/gauss.sum()
@@ -34,13 +25,6 @@ def create_window(window_size, channel):
     _2D_window =_1D_window.mm(_1D_window.t()).float().unsqueeze(0).unsqueeze(0)
     window = Variable(_2D_window.expand(channel, 1, window_size, window_size).contiguous())
     return  to_cuda(window)
-
-def mse_loss(target, prediction):
-    _, C, H, W = target.size()
-    N = C*H*W
-    pixel_difference = target - prediction
-    pixel_loss = pixel_difference.norm(p=2) / float(N)
-    return pixel_loss
 
 # OBTAIN VGG16 PRETRAINED MODEL EXCLUDING FULLY CONNECTED LAYERS
 def get_feature_layer_vgg16(image, layer, model):
@@ -95,43 +79,6 @@ class Vgg16FeatureExtractor(nn.Module):
             feats.append(out['feat_layer_{}'.format(self.layers[i])])
         return feats
 
-class PerceptualLoss(_Loss):
-    
-    def __init__(self, blocks=[1, 2, 3, 4, 5], mse_weight=1, vgg_weight=1.0):
-        super(PerceptualLoss, self).__init__()
-
-        self.mse_weight = mse_weight
-        self.vgg_weight = vgg_weight
-
-        self.blocks = blocks
-        self.model = Vgg16FeatureExtractor(pretrained=True)
-
-        if torch.cuda.is_available():
-            self.model = self.model.cuda()
-        self.model.eval()
-
-        self.perceptual = nn.MSELoss(reduction='sum')
-        # self.mse = nn.MSELoss()
-
-    def forward(self, input, target):
-        loss_value = 0
-
-        input_feats = self.model(torch.cat([input, input, input], dim=1))
-        target_feats = self.model(torch.cat([target, target, target], dim=1))
-
-        feats_num = len(self.blocks)
-        for idx in range(feats_num):
-            input, target = input_feats[idx], target_feats[idx]
-            _, d, w, h = target.size()
-            feat_count = float(d*w*h)
-            loss_value += self.perceptual(input, target) / feat_count
-        loss_value /= feats_num
-        
-        # loss = self.mse_weight * self.mse(input, target) + self.resnet_weight * loss_value
-        loss = self.vgg_weight * loss_value
-
-        return loss
-
 class MPL(nn.Module):
     """
     The Multi Perceptual Loss Function
@@ -168,13 +115,13 @@ class SSIM(nn.Module):
         self.window = create_window(window_size, self.channel)
         self.window.to(torch.device('cuda' if cuda_is_present else 'cpu'))
 
-    def forward(self, y, pred):
-        # y, pred = denormalize_(y), denormalize_(pred)
-        ssim = compute_SSIM(y, pred, self.window_size, self.channel, self.size_average)
+    def forward(self, target, pred):
+        # target, pred = denormalize_(target), denormalize_(pred)
+        ssim = compute_SSIM(target, pred, self.window_size, self.channel, self.size_average)
         dssim = (1.0-ssim)/2.0
         return self.ssim_weight * dssim
 
-class DLoss(_Loss):
+class DLoss(nn.Module):
     """
     The loss for discriminator
     """
@@ -186,7 +133,7 @@ class DLoss(_Loss):
         return self.activation(1-torch.mean(Dy)) + self.activation(1+torch.mean(Dg))
         # return -torch.mean(Dy) + torch.mean(Dg)
 
-class GLoss(_Loss):
+class GLoss(nn.Module):
     """
     The loss for generator
     """
@@ -196,3 +143,45 @@ class GLoss(_Loss):
 
     def forward(self, Dg):
         return -self.weight * torch.mean(Dg)
+
+class CompoundLoss(_Loss):
+    
+    def __init__(self, blocks=[1, 2, 3, 4, 5], vgg_weight=0.1, ssim_weight=0.5, gen_weight=0.4):
+        super(CompoundLoss, self).__init__()
+
+        self.vgg_weight = vgg_weight
+        self.ssim_weight = ssim_weight
+        self.gen_weight = gen_weight
+
+        self.blocks = blocks
+        self.model = Vgg16FeatureExtractor(pretrained=True)
+
+        if torch.cuda.is_available():
+            self.model = self.model.cuda()
+        self.model.eval()
+
+        self.perceptual = nn.MSELoss(reduction='sum')
+        self.ssim = SSIM()
+        self.gen = GLoss()
+
+    def forward(self, pred, ground_truth, discriminator_out):
+        loss_value = 0
+
+        input_feats = self.model(torch.cat([pred, pred, pred], dim=1))
+        target_feats = self.model(torch.cat([ground_truth, ground_truth, ground_truth], dim=1))
+
+        feats_num = len(self.blocks)
+        for idx in range(feats_num):
+            input, target = input_feats[idx], target_feats[idx]
+            _, d, w, h = target.size()
+            feat_count = float(d*w*h)
+            loss_value += self.perceptual(input, target) / feat_count
+        
+        loss_value /= feats_num
+        ssim_loss = self.ssim(ground_truth,pred)
+        gen_loss = self.gen(discriminator_out)
+        
+        # loss = self.mse_weight * self.mse(input, target) + self.resnet_weight * loss_value
+        loss = self.vgg_weight * loss_value + self.ssim_weight * ssim_loss + self.gen_weight * gen_loss
+
+        return loss
