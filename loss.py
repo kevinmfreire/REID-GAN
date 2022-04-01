@@ -16,6 +16,15 @@ Tensor = torch.cuda.FloatTensor if cuda_is_present else torch.FloatTensor
 def to_cuda(data):
     	return data.cuda() if cuda_is_present else data
 
+def denormalize_(image, MIN_B=-1024.0, MAX_B=3072.0):
+    image = image * (MAX_B - MIN_B) + MIN_B
+    return image
+
+def trunc(mat, MIN_B=-160, MAX_B=240):
+    mat[mat <= MIN_B] = MIN_B
+    mat[mat >= MAX_B] = MAX_B
+    return mat
+
 def gaussian(window_size, sigma):
     gauss = torch.Tensor([exp(-(x - window_size//2)**2/float(2*sigma**2)) for x in range(window_size)])
     return gauss/gauss.sum()
@@ -123,7 +132,7 @@ class PerceptualLoss(_Loss):
 
         return loss
 
-class MPL(torch.nn.Module):
+class MPL(nn.Module):
     """
     The Multi Perceptual Loss Function
     """
@@ -146,7 +155,7 @@ class MPL(torch.nn.Module):
             perceptual_loss += feature_loss.mean()
         return perceptual_loss
 
-class SSIM(_Loss):
+class SSIM(nn.Module):
     """
     The Dissimilarity Loss funciton
     """
@@ -160,8 +169,9 @@ class SSIM(_Loss):
         self.window.to(torch.device('cuda' if cuda_is_present else 'cpu'))
 
     def forward(self, y, pred):
+        y, pred = denormalize_(y), denormalize_(pred)
         ssim = compute_SSIM(y, pred, self.window_size, self.channel, self.size_average)
-        dssim = (1.0 - ssim) / 2.0
+        dssim = 1.0 - ssim
         return self.ssim_weight * dssim
 
 class DLoss(_Loss):
@@ -185,4 +195,4 @@ class GLoss(_Loss):
         self.weight = weight
 
     def forward(self, Dg):
-        return -self.weight * torch.mean(Dg)
+        return self.weight * (-torch.mean(Dg) + 1.0)

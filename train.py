@@ -42,7 +42,7 @@ parser.add_argument('--transform', type=bool, default=False)
 # if patch training, batch size is (--patch_n * --batch_size)
 parser.add_argument('--patch_n', type=int, default=10)		# default = 4
 parser.add_argument('--patch_size', type=int, default=128)	# default = 100
-parser.add_argument('--batch_size', type=int, default=2)	# default = 5
+parser.add_argument('--batch_size', type=int, default=5)	# default = 5
 parser.add_argument('--image_size', type=int, default=512)
 
 parser.add_argument('--lr', type=float, default=2e-4) # 5e-5 without decaying rate
@@ -69,14 +69,10 @@ data_loader = get_loader(mode=args.mode,
 cuda_is_present = True if torch.cuda.is_available() else False
 Tensor = torch.cuda.FloatTensor if cuda_is_present else torch.FloatTensor
 
+image_size = args.image_size if args.patch_size == None else args.patch_size
+
 def to_cuda(data):
 	return data.cuda() if cuda_is_present else data
-
-def normalize_(image):
-	image = (image - args.norm_range_min) / (args.norm_range_max - args.norm_range_min)
-	return image
-
-image_size = args.image_size if args.patch_size == None else args.patch_size
 
 if args.load_chkpt:
 	print('Loading Chekpoint')
@@ -156,28 +152,31 @@ for epoch in tq_epoch:
 		# Predictions
 		pred = Gnet(x)
 
-		for _ in range(5):
-			Dnet.parameters(True)
-			optimizer_discriminator.zero_grad()
-			Dnet.zero_grad()
-			pos_neg_imgs = torch.cat([y, pred], dim=0)
-			pred_pos_neg = Dnet(pos_neg_imgs)
-			Dy, Dg = torch.chunk(pred_pos_neg, 2, dim=0)
-			dloss = Dloss(Dy,Dg)
-			dloss.backward(retain_graph=True)
-			optimizer_discriminator.step()
+		# for _ in range(5):
+		# 	Dnet.parameters(True)
+		# 	optimizer_discriminator.zero_grad()
+		# 	Dnet.zero_grad()
+		# 	pos_neg_imgs = torch.cat([y, pred], dim=0)
+		# 	pred_pos_neg = Dnet(pos_neg_imgs)
+		# 	Dy, Dg = torch.chunk(pred_pos_neg, 2, dim=0)
+		# 	dloss = Dloss(Dy,Dg)
+		# 	dloss.backward(retain_graph=True)
+		# 	optimizer_discriminator.step()
 
 		# Training generator
-		Dnet.parameters(False)
-		optimizer_generator.zero_grad()
-		Gnet.zero_grad()
-		Dg = Dnet(pred)
-		g_loss = Gloss(Dg)
-		mp_loss = comp(pred,y)
-		ssim_loss = ssim(y, pred)
-		gloss = g_loss + mp_loss + ssim_loss
-		gloss.backward(retain_graph=True)
-		optimizer_generator.step()
+		for _ in range(5):
+			Dnet.parameters(False)
+			optimizer_generator.zero_grad()
+			Gnet.zero_grad()
+			Dg = Dnet(pred)
+			g_loss = Gloss(Dg)
+			print(g_loss)
+			mp_loss = comp(pred,y)
+			ssim_loss = ssim(y, pred)
+			gloss = g_loss + mp_loss + ssim_loss
+			gloss.backward(retain_graph=True)
+			optimizer_generator.step()
+		quit()
 
 		dloss_sum += dloss.detach().item()
 		gloss_sum += gloss.detach().item()
