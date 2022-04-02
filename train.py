@@ -45,7 +45,7 @@ parser.add_argument('--patch_size', type=int, default=128)	# default = 100
 parser.add_argument('--batch_size', type=int, default=5)	# default = 5
 parser.add_argument('--image_size', type=int, default=512)
 
-parser.add_argument('--lr', type=float, default=2e-4) # 5e-5 without decaying rate
+parser.add_argument('--lr', type=float, default=1e-4) # 5e-5 without decaying rate
 parser.add_argument('--num_epochs', type=int, default=500)
 parser.add_argument('--num_workers', type=int, default=4)
 parser.add_argument('--load_chkpt', type=bool, default=False)
@@ -151,23 +151,24 @@ for epoch in tq_epoch:
 		# Predictions
 		pred = Gnet(x)
 
-		for _ in range(5):
-			Dnet.parameters(True)
-			optimizer_discriminator.zero_grad()
-			Dnet.zero_grad()
-			pos_neg_imgs = torch.cat([y, pred], dim=0)
-			pred_pos_neg = Dnet(pos_neg_imgs)
-			Dy, Dg = torch.chunk(pred_pos_neg, 2, dim=0)
-			dloss = Dloss(Dy,Dg)
-			dloss.backward(retain_graph=True)
-			optimizer_discriminator.step()
+		# Training Discriminator
+		# for _ in range(5):
+		Dnet.parameters(True)
+		optimizer_discriminator.zero_grad()
+		Dnet.zero_grad()
+		pos_neg_imgs = torch.cat([y, pred], dim=0)
+		pred_pos_neg = Dnet(pos_neg_imgs)
+		Dy, Dg = torch.chunk(pred_pos_neg, 2, dim=0)
+		dloss = Dloss(Dy,Dg)
+		dloss.backward(retain_graph=True)
+		optimizer_discriminator.step()
 
 		# Training generator
-		Dnet.parameters(False)
+		# Dnet.parameters(False)
 		optimizer_generator.zero_grad()
 		Gnet.zero_grad()
-		D_gen = Dnet(pred)
-		gloss = criterion(pred, y, D_gen)
+		# D_gen = Dnet(pred)
+		gloss = criterion(pred, y, Dg)
 		gloss.backward(retain_graph=True)
 		optimizer_generator.step()
 

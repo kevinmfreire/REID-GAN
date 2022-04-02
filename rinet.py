@@ -14,24 +14,21 @@ class ImageDiscriminator(nn.Module):
     def __init__(self):
         super(ImageDiscriminator, self).__init__()
         self.inter_channels = 64
-        conv_block = SNConv2d
+        conv_block, self_attn = SNConv2d, Self_Attn
 
-        self.conv1 = conv_block(1, self.inter_channels, 3, 1, padding=1)
-        self.conv2 = conv_block(self.inter_channels, self.inter_channels*2, 3, 2, padding=1)
-        self.conv3 = conv_block(self.inter_channels*2, self.inter_channels*4, 3, 2, padding=1)
-        self.conv4 = conv_block(self.inter_channels*4, self.inter_channels*8, 3, 2, padding=1)
-        self.conv5 = conv_block(self.inter_channels*8, self.inter_channels*8, 3, 2, padding=1)
+        self.discriminator_net = nn.Sequential(
+            conv_block(1, self.inter_channels, 3, 1, padding=1),
+            conv_block(self.inter_channels, self.inter_channels*2, 3, 2, padding=1),
+            conv_block(self.inter_channels*2, self.inter_channels*4, 3, 2, padding=1),
+            self_attn(self.inter_channels*4),
+            conv_block(self.inter_channels*4, self.inter_channels*8, 3, 2, padding=1),
+            self_attn(self.inter_channels*8),
+            conv_block(self.inter_channels*8, self.inter_channels*8, 3, 2, padding=1)
+        )
         
     def forward(self, x):
-
-        x = self.conv1(x)
-        x = self.conv2(x)
-        x = self.conv3(x)
-        x = self.conv4(x)
-        x = self.conv5(x)
-        x = self.conv5(x)
+        x = self.discriminator_net(x)
         x = x.view((x.size(0), -1))
-
         return x
 
 class RIGAN(nn.Module):
@@ -158,6 +155,39 @@ class SNConv2d(nn.Module):
             return self.activation(x)
         else:
             return x
+
+class Self_Attn(nn.Module):
+    """ Self attention Layer"""
+    def __init__(self,in_dim):
+        super(Self_Attn,self).__init__()
+        self.chanel_in = in_dim
+        
+        self.query_conv = nn.Conv2d(in_channels = in_dim , out_channels = in_dim//8 , kernel_size= 1)
+        self.key_conv = nn.Conv2d(in_channels = in_dim , out_channels = in_dim//8 , kernel_size= 1)
+        self.value_conv = nn.Conv2d(in_channels = in_dim , out_channels = in_dim , kernel_size= 1)
+        self.gamma = nn.Parameter(torch.zeros(1))
+
+        self.softmax  = nn.Softmax(dim=-1) #
+    def forward(self,x):
+        """
+            inputs :
+                x : input feature maps( B X C X W X H)
+            returns :
+                out : self attention value + input feature 
+                attention: B X N X N (N is Width*Height)
+        """
+        m_batchsize,C,width ,height = x.size()
+        proj_query  = self.query_conv(x).view(m_batchsize,-1,width*height).permute(0,2,1) # B X CX(N)
+        proj_key =  self.key_conv(x).view(m_batchsize,-1,width*height) # B X C x (*W*H)
+        energy =  torch.bmm(proj_query,proj_key) # transpose check
+        attention = self.softmax(energy) # BX (N) X (N) 
+        proj_value = self.value_conv(x).view(m_batchsize,-1,width*height) # B X C X N
+
+        out = torch.bmm(proj_value,attention.permute(0,2,1))
+        out = out.view(m_batchsize,C,width,height)
+        
+        out = self.gamma*out + x
+        return out
 
 class BasicConv2d(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0):
