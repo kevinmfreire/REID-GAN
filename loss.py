@@ -106,9 +106,9 @@ class SSIM(nn.Module):
     """
     The Dissimilarity Loss funciton
     """
-    def __init__(self, window_size = 11, size_average = True, ssim_weight = 1.0):
+    def __init__(self, window_size = 11, size_average = True):
         super(SSIM, self).__init__()
-        self.ssim_weight = ssim_weight
+        
         self.window_size = window_size
         self.size_average = size_average
         self.channel = 1
@@ -119,7 +119,7 @@ class SSIM(nn.Module):
         # target, pred = denormalize_(target), denormalize_(pred)
         ssim = compute_SSIM(target, pred, self.window_size, self.channel, self.size_average)
         dssim = (1.0-ssim)/2.0
-        return self.ssim_weight * dssim
+        return dssim
 
 class DLoss(nn.Module):
     """
@@ -130,8 +130,8 @@ class DLoss(nn.Module):
         self.activation = nn.ReLU()
         
     def forward(self, Dy, Dg):
-        return self.activation(1-torch.mean(Dy)) + self.activation(1+torch.mean(Dg))
-        # return -torch.mean(Dy) + torch.mean(Dg)
+        # return self.activation(1-torch.mean(Dy)) + self.activation(1+torch.mean(Dg))
+        return -torch.mean(Dy) + torch.mean(Dg)
 
 class GLoss(nn.Module):
     """
@@ -142,11 +142,11 @@ class GLoss(nn.Module):
         self.weight = weight
 
     def forward(self, Dg):
-        return -self.weight * torch.mean(Dg)
+        return -torch.mean(Dg)
 
 class CompoundLoss(_Loss):
     
-    def __init__(self, blocks=[1, 2, 3, 4, 5], vgg_weight=0.1, ssim_weight=0.5, gen_weight=0.4):
+    def __init__(self, blocks=[1, 2, 3, 4, 5], vgg_weight=0.4, ssim_weight=0.3, gen_weight=0.3):
         super(CompoundLoss, self).__init__()
 
         self.vgg_weight = vgg_weight
@@ -160,7 +160,7 @@ class CompoundLoss(_Loss):
             self.model = self.model.cuda()
         self.model.eval()
 
-        self.perceptual = nn.MSELoss(reduction='sum')
+        self.perceptual = nn.MSELoss()
         self.ssim = SSIM()
         self.gen = GLoss()
 
@@ -173,15 +173,13 @@ class CompoundLoss(_Loss):
         feats_num = len(self.blocks)
         for idx in range(feats_num):
             input, target = input_feats[idx], target_feats[idx]
-            _, d, w, h = target.size()
-            feat_count = float(d*w*h)
-            loss_value += self.perceptual(input, target) / feat_count
+            loss_value += self.perceptual(input, target)
         
         loss_value /= feats_num
         ssim_loss = self.ssim(ground_truth,pred)
         gen_loss = self.gen(discriminator_out)
         
-        # loss = self.mse_weight * self.mse(input, target) + self.resnet_weight * loss_value
-        loss = self.vgg_weight * loss_value + self.ssim_weight * ssim_loss + self.gen_weight * gen_loss
+        # loss = self.vgg_weight * loss_value + self.ssim_weight * ssim_loss + self.gen_weight * gen_loss
+        loss = loss_value + ssim_loss + gen_loss
 
         return loss
