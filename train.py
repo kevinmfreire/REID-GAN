@@ -169,7 +169,7 @@ for epoch in tq_epoch:
 		Gnet.zero_grad()
 		# D_gen = Dnet(pred)
 		gloss = criterion(pred, y, Dg)
-		gloss.backward(retain_graph=True)
+		gloss.backward()
 		optimizer_generator.step()
 
 		dloss_sum += dloss.detach().item()
