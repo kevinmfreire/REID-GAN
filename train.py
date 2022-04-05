@@ -110,8 +110,8 @@ else:
 # Losses
 Dloss = DLoss()
 criterion = CompoundLoss()
-Dloss = to_cuda(Dloss)
-criterion = to_cuda(criterion)
+# Dloss = to_cuda(Dloss)
+# criterion = to_cuda(criterion)
 
 losses = []
 start_time = time.time()
@@ -158,9 +158,9 @@ for epoch in tq_epoch:
 		Dnet.zero_grad()
 		pos_neg_imgs = torch.cat([y, pred], dim=0)
 		pred_pos_neg = Dnet(pos_neg_imgs)
-		Dy, Dg = torch.chunk(pred_pos_neg, 2, dim=0)
-		dloss = Dloss(Dy,Dg)
-		dloss.backward()
+		pred_pos, pred_neg = torch.chunk(pred_pos_neg, 2, dim=0)
+		dloss = Dloss(pred_pos,pred_neg)
+		dloss.backward(retain_graph=True)
 		optimizer_discriminator.step()
 
 		# Training generator
@@ -168,7 +168,7 @@ for epoch in tq_epoch:
 		optimizer_generator.zero_grad()
 		Gnet.zero_grad()
 		# D_gen = Dnet(pred)
-		gloss = criterion(pred, y, Dg)
+		gloss = criterion(pred, y, pred_neg)
 		gloss.backward()
 		optimizer_generator.step()
 

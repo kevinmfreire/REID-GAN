@@ -52,10 +52,8 @@ class RIGAN(nn.Module):
         inception_e = inception_blocks[5]
         deconv_block = inception_blocks[6]
 
-        self.channel_conv1 = conv_block(1, self.inter_channels, 1, 1)
-        self.spatial_conv1 = conv_block(self.inter_channels, self.inter_channels, 3, 2, padding=1)
-        self.channel_conv2 = conv_block(self.inter_channels, self.inter_channels*2, 1, 1)
-        self.spatial_conv2 = conv_block(self.inter_channels*2, self.inter_channels*2, 3, 2, padding=1)
+        self.conv1 = conv_block(1, self.inter_channels, 3, 2, padding=1)
+        self.conv2 = conv_block(self.inter_channels, self.inter_channels*2, 3, 2, padding=1)
 
         self.layer_block_1 = self._make_layer(inception_a, 2, inter_channels=32)
         self.reduce_grid_1 = self._alter_grid_layer(inception_b, 128, inter_channels=64)
@@ -67,21 +65,16 @@ class RIGAN(nn.Module):
         self.expand_grid_2 = self._alter_grid_layer(inception_b, 256, inter_channels=64, decoder=1)
         self.layer_block_5 = self._make_layer(inception_a, 2, inter_channels=32)
 
-        self.channel_deconv1 = deconv_block(192, self.inter_channels*2, 1, 1)
-        self.spatial_deconv1 = deconv_block(self.inter_channels*2, self.inter_channels*2, 4, 2, padding=1)
-        self.channel_deconv2 = deconv_block(96, self.inter_channels, 1, 1)
-        self.spatial_deconv2 = deconv_block(self.inter_channels, self.inter_channels, 4, 2, padding=1)
-
+        self.deconv1 = deconv_block(192, self.inter_channels*2, 4, 2, padding=1)
+        self.deconv2 = deconv_block(96, self.inter_channels, 4, 2, padding=1)
         self.out_conv = nn.Conv2d(33, 1, 1, bias=True)
 
     def forward(self, x):
         
         identity = x.clone()
-        x = self.channel_conv1(x)
-        conv1 = self.spatial_conv1(x)
-        x = self.channel_conv2(conv1)
-        conv2 = self.spatial_conv2(x)
-
+        conv1 = self.conv1(x)
+        conv2 = self.conv2(conv1)
+        
         x = self.layer_block_1(conv2)
         x = self.reduce_grid_1(x)
         x = self.layer_block_2(x)
@@ -92,10 +85,8 @@ class RIGAN(nn.Module):
         x = self.expand_grid_2(x)
         x = self.layer_block_5(x)
 
-        x = self.channel_deconv1(torch.cat((conv2,x),1))
-        x = self.spatial_deconv1(x)
-        x = self.channel_deconv2(torch.cat((conv1,x),1))
-        x = self.spatial_deconv2(x)
+        x = self.deconv1(torch.cat((conv2,x),1))
+        x = self.deconv2(torch.cat((conv1,x),1))
         out = self.out_conv(torch.cat((identity,x),1))
 
         return out
