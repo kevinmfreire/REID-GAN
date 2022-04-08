@@ -72,11 +72,11 @@ class Vgg16FeatureExtractor(nn.Module):
         del self.model.classifier
         self.return_layers = {'{}'.format(self.layers[i]): 'feat_layer_{}'.format(self.layers[i]) for i in range(len(self.layers))}
         self.model = IntermediateLayerGetter(self.model.features, return_layers=self.return_layers)
-        self.normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])
+        # self.normalize = transforms.functional.normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])
 
     def forward(self, x):
         feats = list()
-        x = self.normalize(x)
+        x = transforms.functional.normalize(x,mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])
         out = self.model(x)    
         for i in range(len(self.layers)):
             feats.append(out['feat_layer_{}'.format(self.layers[i])])
@@ -129,25 +129,26 @@ class DLoss(nn.Module):
     """
     The loss for discriminator
     """
-    def __init__(self):
+    def __init__(self, weight=1):
         super(DLoss, self).__init__()
         self.activation = nn.ReLU()
+        self.weight = weight
         
-    def forward(self, Dy, Dg):
-        # return self.activation(1-torch.mean(Dy)) + self.activation(1+torch.mean(Dg))
-        return -torch.mean(Dy) + torch.mean(Dg)
+    def forward(self, pos, neg):
+        # return self.activation(1-torch.mean(pos)) + self.activation(1+torch.mean(neg))
+        # return -torch.mean(pos) + torch.mean(neg)
+        return self.weight * (torch.sum(self.activation(-1+pos)) + torch.sum(self.activation(-1-neg)))/pos.size(0)
 
 class GLoss(nn.Module):
     """
     The loss for generator
     """
-    def __init__(self, weight=1.0):
+    def __init__(self, weight=1):
         super(GLoss, self).__init__()
         self.weight = weight
 
-    def forward(self, Dg):
-        # return (1.0-torch.mean(Dg))/2
-        return -torch.mean(Dg)
+    def forward(self, neg):
+        return - self.weight * torch.mean(neg)
 
 class CompoundLoss(_Loss):
     
