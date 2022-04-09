@@ -72,11 +72,11 @@ class Vgg16FeatureExtractor(nn.Module):
         del self.model.classifier
         self.return_layers = {'{}'.format(self.layers[i]): 'feat_layer_{}'.format(self.layers[i]) for i in range(len(self.layers))}
         self.model = IntermediateLayerGetter(self.model.features, return_layers=self.return_layers)
-        # self.normalize = transforms.functional.normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])
+        self.normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])
 
     def forward(self, x):
         feats = list()
-        x = transforms.functional.normalize(x,mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])
+        x = self.normalize(x)
         out = self.model(x)    
         for i in range(len(self.layers)):
             feats.append(out['feat_layer_{}'.format(self.layers[i])])
@@ -152,7 +152,7 @@ class GLoss(nn.Module):
 
 class CompoundLoss(_Loss):
     
-    def __init__(self, blocks=[1, 2, 3, 4, 5], vgg_weight=0.1, ssim_weight=0.3, gen_weight=0.3):
+    def __init__(self, blocks=[1, 2, 3, 4, 5], vgg_weight=0.5, ssim_weight=1.0, gen_weight=0.3):
         super(CompoundLoss, self).__init__()
 
         self.vgg_weight = vgg_weight
@@ -170,7 +170,7 @@ class CompoundLoss(_Loss):
         self.ssim = SSIM()
         self.gen = GLoss()
 
-    def forward(self, pred, ground_truth, discriminator_out):
+    def forward(self, pred, ground_truth):#, discriminator_out):
         loss_value = 0
 
         input_feats = self.model(torch.cat([pred, pred, pred], dim=1))
@@ -183,9 +183,10 @@ class CompoundLoss(_Loss):
         
         loss_value /= feats_num
         ssim_loss = self.ssim(ground_truth,pred)
-        gen_loss = self.gen(discriminator_out)
+        # gen_loss = self.gen(discriminator_out)
         
         # loss = self.vgg_weight * loss_value + self.ssim_weight * ssim_loss + self.gen_weight * gen_loss
-        loss = self.vgg_weight * loss_value + ssim_loss + gen_loss
+        # loss = self.vgg_weight * loss_value + ssim_loss + gen_loss
+        loss = self.vgg_weight * loss_value + ssim_loss
 
         return loss
