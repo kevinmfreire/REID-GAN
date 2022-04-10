@@ -150,7 +150,7 @@ class GLoss(nn.Module):
     def forward(self, neg):
         return - self.weight * torch.mean(neg)
 
-class CompoundLoss(_Loss):
+class CompoundLoss(nn.Module):
     
     def __init__(self, blocks=[1, 2, 3, 4, 5], vgg_weight=0.5, ssim_weight=1.0, gen_weight=0.3):
         super(CompoundLoss, self).__init__()
@@ -167,8 +167,8 @@ class CompoundLoss(_Loss):
         self.model.eval()
 
         self.perceptual = nn.MSELoss()
-        self.ssim = SSIM()
-        self.gen = GLoss()
+        # self.ssim = SSIM()
+        # self.gen = GLoss()
 
     def forward(self, pred, ground_truth):#, discriminator_out):
         loss_value = 0
@@ -182,11 +182,11 @@ class CompoundLoss(_Loss):
             loss_value += self.perceptual(input, target)
         
         loss_value /= feats_num
-        ssim_loss = self.ssim(ground_truth,pred)
+        # ssim_loss = self.ssim(ground_truth,pred)
         # gen_loss = self.gen(discriminator_out)
         
         # loss = self.vgg_weight * loss_value + self.ssim_weight * ssim_loss + self.gen_weight * gen_loss
         # loss = self.vgg_weight * loss_value + ssim_loss + gen_loss
-        loss = self.vgg_weight * loss_value + ssim_loss
+        loss = self.vgg_weight * loss_value #+ ssim_loss
 
         return loss

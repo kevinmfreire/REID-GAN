@@ -110,6 +110,7 @@ else:
 # Losses
 # Dloss = DLoss()
 criterion = CompoundLoss()
+ssim = SSIM()
 # Dloss = to_cuda(Dloss)
 # criterion = to_cuda(criterion)
 
@@ -169,10 +170,12 @@ for epoch in tq_epoch:
 		Gnet.zero_grad()
 		# D_gen = Dnet(pred)
 		# gloss = criterion(pred, y, pred_neg)
-		gloss = criterion(pred, y)
+		perceptual_loss = criterion(pred, y)
+		ssim_loss = ssim(y, pred)
+		gloss = perceptual_loss + ssim_loss
 		gloss.backward(retain_graph=True)
 		optimizer_generator.step()
-		
+
 		# dloss_sum += dloss.detach().item()
 		gloss_sum += gloss.detach().item()
 		
