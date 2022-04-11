@@ -187,6 +187,6 @@ class CompoundLoss(nn.Module):
         
         # loss = self.vgg_weight * loss_value + self.ssim_weight * ssim_loss + self.gen_weight * gen_loss
         # loss = self.vgg_weight * loss_value + ssim_loss + gen_loss
-        loss = self.vgg_weight * loss_value #+ ssim_loss
+        loss = loss_value #+ ssim_loss
 
         return loss

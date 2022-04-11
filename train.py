@@ -76,7 +76,7 @@ def to_cuda(data):
 
 if args.load_chkpt:
 	print('Loading Chekpoint')
-	whole_model = torch.load(args.save_path+ 'epoch_10_ckpt.pth.tar', map_location=torch.device('cuda' if cuda_is_present else 'cpu'))
+	whole_model = torch.load(args.save_path+ 'epoch_35_ckpt.pth.tar', map_location=torch.device('cuda' if cuda_is_present else 'cpu'))
 	netG_state_dict,optG_state_dict = whole_model['netG_state_dict'], whole_model['optG_state_dict']
 	netD_state_dict,optD_state_dict = whole_model['netD_state_dict'], whole_model['optD_state_dict']
 	Gnet = RIGAN()
@@ -172,7 +172,7 @@ for epoch in tq_epoch:
 		# gloss = criterion(pred, y, pred_neg)
 		perceptual_loss = criterion(pred, y)
 		ssim_loss = ssim(y, pred)
-		gloss = perceptual_loss + ssim_loss
+		gloss = 0.1*perceptual_loss + ssim_loss
 		gloss.backward(retain_graph=True)
 		optimizer_generator.step()
 

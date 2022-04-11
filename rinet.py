@@ -183,7 +183,7 @@ class Self_Attn(nn.Module):
 class BasicConv2d(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0):
         super(BasicConv2d, self).__init__()
-        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding, bias=False)
+        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding, bias=True)
         self.bn = nn.BatchNorm2d(out_channels, eps=0.001)
         self.activation = nn.ReLU(inplace=True)
 
@@ -195,7 +195,7 @@ class BasicConv2d(nn.Module):
 class BasicDeconv2d(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1,padding=0):
         super(BasicDeconv2d, self).__init__()
-        self.deconv = nn.ConvTranspose2d(in_channels, out_channels, kernel_size, stride, padding, bias=False)
+        self.deconv = nn.ConvTranspose2d(in_channels, out_channels, kernel_size, stride, padding, bias=True)
         self.bn = nn.BatchNorm2d(out_channels, eps=0.001)
         self.activation = nn.ReLU(inplace=True)
 
