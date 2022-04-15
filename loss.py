@@ -77,7 +77,7 @@ class Vgg16FeatureExtractor(nn.Module):
     def forward(self, x):
         feats = list()
         x = self.normalize(x)
-        out = self.model(x)    
+        out = self.model(x)
         for i in range(len(self.layers)):
             feats.append(out['feat_layer_{}'.format(self.layers[i])])
         return feats
@@ -166,7 +166,7 @@ class CompoundLoss(nn.Module):
             self.model = self.model.cuda()
         self.model.eval()
 
-        self.perceptual = nn.MSELoss()
+        self.mse = nn.MSELoss()
         # self.ssim = SSIM()
         # self.gen = GLoss()
 
@@ -179,14 +179,15 @@ class CompoundLoss(nn.Module):
         feats_num = len(self.blocks)
         for idx in range(feats_num):
             input, target = input_feats[idx], target_feats[idx]
-            loss_value += self.perceptual(input, target)
+            loss_value += self.mse(input, target)
         
         loss_value /= feats_num
+        loss_mse = self.mse(pred, ground_truth)
         # ssim_loss = self.ssim(ground_truth,pred)
         # gen_loss = self.gen(discriminator_out)
         
         # loss = self.vgg_weight * loss_value + self.ssim_weight * ssim_loss + self.gen_weight * gen_loss
         # loss = self.vgg_weight * loss_value + ssim_loss + gen_loss
-        loss = loss_value #+ ssim_loss
+        loss = loss_value + loss_mse
 
         return loss
