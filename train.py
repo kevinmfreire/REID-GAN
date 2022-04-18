@@ -204,8 +204,8 @@ for epoch in tq_epoch:
 			}
 			torch.save(saved_model, '{}latest_ckpt.pth.tar'.format(args.save_path))
 			# Saving to google drive due to training time limits in Google collab
-			cmd = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/rigan_model/'.format(args.save_path)
-			os.system(cmd)
+			# cmd = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/rigan_model/'.format(args.save_path)
+			# os.system(cmd)
 	
 	# Calculating average loss
 	# avg_dloss = dloss_sum/float(count)
@@ -220,7 +220,17 @@ for epoch in tq_epoch:
 	tq_epoch.set_postfix({'STEP': total_iters,'AVG_G_LOSS': '{:.5f}'.format(avg_gloss)})#, 'AVG_D_LOSS': '{:.8f}'.format(avg_dloss)})
 	
 	# Saving model after every 10 epoch
-	if epoch % 5 == 0:
+	if epoch % 1 == 0:
+		saved_model = {
+			'epoch': epoch ,
+			'netG_state_dict': Gnet.state_dict(),
+			'optG_state_dict': optimizer_generator.state_dict(),
+			# 'netD_state_dict': Dnet.state_dict(),
+			# 'optD_state_dict': optimizer_discriminator.state_dict(),
+			'lr': lr,
+			'total_iters': total_iters
+		}
+		torch.save(saved_model, '{}latest_ckpt.pth.tar'.format(args.save_path))
 		cmd1 = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/rigan_model/epoch_{}_ckpt.pth.tar'.format(args.save_path, epoch)
 		cmd2 = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/rigan_model/'.format(args.save_path)
 		os.system(cmd1)
