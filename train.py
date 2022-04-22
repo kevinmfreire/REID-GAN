@@ -172,7 +172,7 @@ for epoch in tq_epoch:
 		# gloss = criterion(pred, y, pred_neg)
 		perceptual_loss = criterion(pred, y)
 		ssim_loss = ssim(y, pred)
-		gloss = 0.1*perceptual_loss + ssim_loss
+		gloss = perceptual_loss + ssim_loss
 		gloss.backward(retain_graph=True)
 		optimizer_generator.step()
 
