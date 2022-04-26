@@ -5,4 +5,4 @@ All data was obtained through the Cancer Imaging Archive website at https://wiki
 You first want to create a virtual Environment and install all the requirements using pip install -r requirements.txt
 Afterwards you want to run the prep.py file to prepare all your data.  You have the option to normalize your training/testing data within the prep.py.
 
-This repository is still under development and not completed, I have verious branches for different model training however my most current branch is rinet.
+This repository is still under development and not completed, I have two branches for different model training however my most current branch is rinet.
