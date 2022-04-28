@@ -180,7 +180,7 @@ class CompoundLoss(nn.Module):
         for idx in range(feats_num):
             input, target = input_feats[idx], target_feats[idx]
             loss_value += self.mse(input, target)
-        
+
         loss_value /= feats_num
         loss_mse = self.mse(pred, ground_truth)
         # ssim_loss = self.ssim(ground_truth,pred)
