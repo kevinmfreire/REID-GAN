@@ -83,7 +83,7 @@ if args.load_chkpt:
 	Gnet = to_cuda(Gnet)
 	# Dnet = ImageDiscriminator()
 	# Dnet = to_cuda(Dnet)
-	optimizer_generator = torch.optim.Adam(Gnet.parameters(), lr=args.lr, betas=(0.5,0.9))
+	optimizer_generator = torch.optim.Adam(Gnet.parameters(), lr=args.lr, betas=(0.01,0.99))
 	# optimizer_discriminator = torch.optim.Adam(Dnet.parameters(), lr=4*args.lr, betas=(0.5,0.9))
 	Gnet.load_state_dict(netG_state_dict)
 	# Dnet.load_state_dict(netD_state_dict)
@@ -220,7 +220,7 @@ for epoch in tq_epoch:
 	tq_epoch.set_postfix({'STEP': total_iters,'AVG_G_LOSS': '{:.5f}'.format(avg_gloss)})#, 'AVG_D_LOSS': '{:.8f}'.format(avg_dloss)})
 	
 	# Saving model after every 10 epoch
-	if epoch % 1 == 0:
+	if epoch % 2 == 0:
 		saved_model = {
 			'epoch': epoch ,
 			'netG_state_dict': Gnet.state_dict(),
