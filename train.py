@@ -83,7 +83,7 @@ if args.load_chkpt:
 	Gnet = to_cuda(Gnet)
 	# Dnet = ImageDiscriminator()
 	# Dnet = to_cuda(Dnet)
-	optimizer_generator = torch.optim.Adam(Gnet.parameters(), lr=args.lr, betas=(0.2,0.8))
+	optimizer_generator = torch.optim.Adam(Gnet.parameters(), lr=args.lr, betas=(0.01,0.99))
 	# optimizer_discriminator = torch.optim.Adam(Dnet.parameters(), lr=4*args.lr, betas=(0.5,0.9))
 	Gnet.load_state_dict(netG_state_dict)
 	# Dnet.load_state_dict(netD_state_dict)
