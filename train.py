@@ -101,8 +101,8 @@ else:
 	Gnet = to_cuda(Gnet)
 	Dnet = ImageDiscriminator()
 	Dnet = to_cuda(Dnet)
-	optimizer_generator = torch.optim.Adam(Gnet.parameters(), lr=args.lr, betas=(0.01,0.999))
-	optimizer_discriminator = torch.optim.Adam(Dnet.parameters(), lr=4*args.lr, betas=(0.5,0.9))
+	optimizer_generator = torch.optim.Adam(Gnet.parameters(), lr=args.lr, betas=(0.01,0.99))
+	optimizer_discriminator = torch.optim.Adam(Dnet.parameters(), lr=4*args.lr, betas=(0.01,0.99))
 	cur_epoch = 0
 	total_iters = 0
 	lr = args.lr
