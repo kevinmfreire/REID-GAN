@@ -99,16 +99,16 @@ else:
 	print('Training model from scrath')
 	Gnet = RIGAN()
 	Gnet = to_cuda(Gnet)
-	# Dnet = ImageDiscriminator()
-	# Dnet = to_cuda(Dnet)
+	Dnet = ImageDiscriminator()
+	Dnet = to_cuda(Dnet)
 	optimizer_generator = torch.optim.Adam(Gnet.parameters(), lr=args.lr, betas=(0.01,0.999))
-	# optimizer_discriminator = torch.optim.Adam(Dnet.parameters(), lr=4*args.lr, betas=(0.5,0.9))
+	optimizer_discriminator = torch.optim.Adam(Dnet.parameters(), lr=4*args.lr, betas=(0.5,0.9))
 	cur_epoch = 0
 	total_iters = 0
 	lr = args.lr
 
 # Losses
-# Dloss = DLoss()
+Dloss = DLoss()
 criterion = CompoundLoss()
 ssim = SSIM()
 # Dloss = to_cuda(Dloss)
@@ -123,7 +123,7 @@ for epoch in tq_epoch:
 	# Initializing sum of losses for discriminator and generator
 	gloss_sum, dloss_sum, count = 0, 0, 0
 
-	# Dnet.train()
+	Dnet.train()
 	Gnet.train()
 
 	data_tqdm = tqdm(data_loader, position=0, leave=True, desc='Iters')
@@ -153,39 +153,39 @@ for epoch in tq_epoch:
 		pred = Gnet(x)
 
 		# Training Discriminator
-		# for _ in range(5):
-		# Dnet.parameters(True)
-		# optimizer_discriminator.zero_grad()
-		# Dnet.zero_grad()
-		# pos_neg_imgs = torch.cat([y, pred], dim=0)
-		# pred_pos_neg = Dnet(pos_neg_imgs)
-		# pred_pos, pred_neg = torch.chunk(pred_pos_neg, 2, dim=0)
-		# dloss = Dloss(pred_pos,pred_neg)
-		# dloss.backward(retain_graph=True)
-		# optimizer_discriminator.step()
+		for _ in range(5):
+			Dnet.parameters(True)
+			optimizer_discriminator.zero_grad()
+			Dnet.zero_grad()
+			pos_neg_imgs = torch.cat([y, pred], dim=0)
+			pred_pos_neg = Dnet(pos_neg_imgs)
+			pred_pos, pred_neg = torch.chunk(pred_pos_neg, 2, dim=0)
+			dloss = Dloss(pred_pos,pred_neg)
+			dloss.backward(retain_graph=True)
+			optimizer_discriminator.step()
 
 		# Training generator
-		# Dnet.parameters(False)
+		Dnet.parameters(False)
 		optimizer_generator.zero_grad()
 		Gnet.zero_grad()
 		# D_gen = Dnet(pred)
-		# gloss = criterion(pred, y, pred_neg)
-		perceptual_loss = criterion(pred, y)
-		ssim_loss = ssim(y, pred)
-		gloss = perceptual_loss + ssim_loss
+		gloss = criterion(pred, y, pred_neg)
+		# perceptual_loss = criterion(pred, y)
+		# ssim_loss = ssim(y, pred)
+		# gloss = perceptual_loss + ssim_loss
 		gloss.backward(retain_graph=True)
 		optimizer_generator.step()
 
-		# dloss_sum += dloss.detach().item()
+		dloss_sum += dloss.detach().item()
 		gloss_sum += gloss.detach().item()
 		
-		data_tqdm.set_postfix({'ITER': i+1, 'G_LOSS': '{:.5f}'.format(gloss.item())})#, 'D_LOSS': '{:.8f}'.format(dloss.item())})
-		if total_iters % args.decay_iters == 0:
-			lr = lr * 0.5
-			for param_group in optimizer_generator.param_groups:
-				param_group['lr'] = lr
-			# for param_group in optimizer_discriminator.param_groups:
-			# 	param_group['lr'] = 4*lr
+		data_tqdm.set_postfix({'ITER': i+1, 'G_LOSS': '{:.5f}'.format(gloss.item()), 'D_LOSS': '{:.8f}'.format(dloss.item())})
+		# if total_iters % args.decay_iters == 0:
+		# 	lr = lr * 0.5
+		# 	for param_group in optimizer_generator.param_groups:
+		# 		param_group['lr'] = lr
+		# 	for param_group in optimizer_discriminator.param_groups:
+		# 		param_group['lr'] = 4*lr
 
 		# Saving model after every 10 iterations
 		if total_iters % args.save_iters == 0:
@@ -197,8 +197,8 @@ for epoch in tq_epoch:
 				'epoch': epoch ,
 				'netG_state_dict': Gnet.state_dict(),
 				'optG_state_dict': optimizer_generator.state_dict(),
-				# 'netD_state_dict': Dnet.state_dict(),
-				# 'optD_state_dict': optimizer_discriminator.state_dict(),
+				'netD_state_dict': Dnet.state_dict(),
+				'optD_state_dict': optimizer_discriminator.state_dict(),
 				'lr': lr,
 				'total_iters': total_iters
 			}
@@ -208,16 +208,16 @@ for epoch in tq_epoch:
 			# os.system(cmd)
 	
 	# Calculating average loss
-	# avg_dloss = dloss_sum/float(count)
+	avg_dloss = dloss_sum/float(count)
 	avg_gloss = gloss_sum/float(count)
-	# losses.append((avg_gloss, avg_dloss))
-	losses.append(avg_gloss)
+	losses.append((avg_gloss, avg_dloss))
+	# losses.append(avg_gloss)
 
 	# Saving to google drive
 	save_loss = '/gdrive/MyDrive/rigan_model/loss_arr.npy'
 	np.save(save_loss, losses, allow_pickle=True)
 	
-	tq_epoch.set_postfix({'STEP': total_iters,'AVG_G_LOSS': '{:.5f}'.format(avg_gloss)})#, 'AVG_D_LOSS': '{:.8f}'.format(avg_dloss)})
+	tq_epoch.set_postfix({'STEP': total_iters,'AVG_G_LOSS': '{:.5f}'.format(avg_gloss), 'AVG_D_LOSS': '{:.8f}'.format(avg_dloss)})
 	
 	# Saving model after every 10 epoch
 	if epoch % 2 == 0:
@@ -225,8 +225,8 @@ for epoch in tq_epoch:
 			'epoch': epoch ,
 			'netG_state_dict': Gnet.state_dict(),
 			'optG_state_dict': optimizer_generator.state_dict(),
-			# 'netD_state_dict': Dnet.state_dict(),
-			# 'optD_state_dict': optimizer_discriminator.state_dict(),
+			'netD_state_dict': Dnet.state_dict(),
+			'optD_state_dict': optimizer_discriminator.state_dict(),
 			'lr': lr,
 			'total_iters': total_iters
 		}

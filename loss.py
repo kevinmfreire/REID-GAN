@@ -17,6 +17,10 @@ Tensor = torch.cuda.FloatTensor if cuda_is_present else torch.FloatTensor
 def to_cuda(data):
     	return data.cuda() if cuda_is_present else data
 
+def normalize_(image, MIN_B=-1024.0, MAX_B=3072.0):
+    image = (image - MIN_B) / (MAX_B - MIN_B)
+    return image
+
 def gaussian(window_size, sigma):
     gauss = torch.Tensor([exp(-(x - window_size//2)**2/float(2*sigma**2)) for x in range(window_size)])
     return gauss/gauss.sum()
@@ -121,8 +125,8 @@ class SSIM(nn.Module):
     def forward(self, target, pred):
         # target, pred = denormalize_(target), denormalize_(pred)
         ssim = compute_SSIM(target, pred, self.window_size, self.channel, self.size_average)
-        # dssim = (1.0-ssim)/2.0
-        dssim = 1.0-ssim
+        dssim = (1.0-ssim)/2.0
+        # dssim = 1.0-ssim
         return dssim
 
 class DLoss(nn.Module):
@@ -135,9 +139,9 @@ class DLoss(nn.Module):
         self.weight = weight
         
     def forward(self, pos, neg):
-        # return self.activation(1-torch.mean(pos)) + self.activation(1+torch.mean(neg))
+        return self.activation(1-torch.mean(pos)) + self.activation(1+torch.mean(neg))
         # return -torch.mean(pos) + torch.mean(neg)
-        return self.weight * (torch.sum(self.activation(-1+pos)) + torch.sum(self.activation(-1-neg)))/pos.size(0)
+        # return self.weight * (torch.sum(self.activation(-1+pos)) + torch.sum(self.activation(-1-neg)))/pos.size(0)
 
 class GLoss(nn.Module):
     """
@@ -148,11 +152,11 @@ class GLoss(nn.Module):
         self.weight = weight
 
     def forward(self, neg):
-        return - self.weight * torch.mean(neg)
+        return 1.0 - torch.mean(neg)
 
 class CompoundLoss(nn.Module):
     
-    def __init__(self, blocks=[1, 2, 3, 4, 5], vgg_weight=0.5, ssim_weight=1.0, gen_weight=0.3):
+    def __init__(self, blocks=[1, 2, 3, 4, 5], vgg_weight=0.3, ssim_weight=0.5, gen_weight=0.2):
         super(CompoundLoss, self).__init__()
 
         self.vgg_weight = vgg_weight
@@ -167,14 +171,15 @@ class CompoundLoss(nn.Module):
         self.model.eval()
 
         self.mse = nn.MSELoss()
-        # self.ssim = SSIM()
-        # self.gen = GLoss()
+        self.ssim = SSIM()
+        self.gen = GLoss()
 
-    def forward(self, pred, ground_truth):#, discriminator_out):
+    def forward(self, pred, ground_truth, discriminator_out):
         loss_value = 0
+        pred_norm, gt_norm = normalize_(pred), normalize_(ground_truth)
 
-        input_feats = self.model(torch.cat([pred, pred, pred], dim=1))
-        target_feats = self.model(torch.cat([ground_truth, ground_truth, ground_truth], dim=1))
+        input_feats = self.model(torch.cat([pred_norm, pred_norm, pred_norm], dim=1))
+        target_feats = self.model(torch.cat([gt_norm, gt_norm, gt_norm], dim=1))
 
         feats_num = len(self.blocks)
         for idx in range(feats_num):
@@ -182,12 +187,12 @@ class CompoundLoss(nn.Module):
             loss_value += self.mse(input, target)
 
         loss_value /= feats_num
-        loss_mse = self.mse(pred, ground_truth)
-        # ssim_loss = self.ssim(ground_truth,pred)
-        # gen_loss = self.gen(discriminator_out)
+        # loss_mse = self.mse(pred, ground_truth)
+        ssim_loss = self.ssim(ground_truth,pred)
+        gen_loss = self.gen(discriminator_out)
         
-        # loss = self.vgg_weight * loss_value + self.ssim_weight * ssim_loss + self.gen_weight * gen_loss
+        loss = self.vgg_weight * loss_value + self.ssim_weight * ssim_loss + self.gen_weight * gen_loss
         # loss = self.vgg_weight * loss_value + ssim_loss + gen_loss
-        loss = loss_value + loss_mse
+        # loss = loss_value + loss_mse
 
         return loss
