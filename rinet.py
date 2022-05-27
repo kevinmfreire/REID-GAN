@@ -135,7 +135,7 @@ class SNConv2d(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, dilation = 1, groups=1, bias=True):
         super(SNConv2d, self).__init__()
         self.conv2d = nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding, dilation, groups, bias)
-        self.conv2d = nn.utils.parametrizations.spectral_norm(self.conv2d)
+        self.conv2d = nn.utils.spectral_norm(self.conv2d)
         self.activation = nn.LeakyReLU(0.2, inplace=True)
         for m in self.modules():
             if isinstance(m, nn.Conv2d):

@@ -80,7 +80,7 @@ class Vgg16FeatureExtractor(nn.Module):
 
     def forward(self, x):
         feats = list()
-        x = self.normalize(x)
+        # x = self.normalize(x)
         out = self.model(x)
         for i in range(len(self.layers)):
             feats.append(out['feat_layer_{}'.format(self.layers[i])])

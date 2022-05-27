@@ -153,14 +153,14 @@ for epoch in tq_epoch:
 		pred = Gnet(x)
 
 		# Training Discriminator
-		for _ in range(5):
+		for _ in range(2):
 			Dnet.parameters(True)
 			optimizer_discriminator.zero_grad()
 			Dnet.zero_grad()
 			pos_neg_imgs = torch.cat([y, pred], dim=0)
 			pred_pos_neg = Dnet(pos_neg_imgs)
 			pred_pos, pred_neg = torch.chunk(pred_pos_neg, 2, dim=0)
-			dloss = Dloss(pred_pos,pred_neg)
+			dloss = Dloss(pred_pos,pred_neg).clone()
 			dloss.backward(retain_graph=True)
 			optimizer_discriminator.step()
 
