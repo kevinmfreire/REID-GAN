@@ -78,17 +78,17 @@ if args.load_chkpt:
 	print('Loading Chekpoint')
 	whole_model = torch.load(args.save_path+ 'epoch_15_ckpt.pth.tar', map_location=torch.device('cuda' if cuda_is_present else 'cpu'))
 	netG_state_dict,optG_state_dict = whole_model['netG_state_dict'], whole_model['optG_state_dict']
-	# netD_state_dict,optD_state_dict = whole_model['netD_state_dict'], whole_model['optD_state_dict']
+	netD_state_dict,optD_state_dict = whole_model['netD_state_dict'], whole_model['optD_state_dict']
 	Gnet = RIGAN()
 	Gnet = to_cuda(Gnet)
-	# Dnet = ImageDiscriminator()
-	# Dnet = to_cuda(Dnet)
+	Dnet = ImageDiscriminator()
+	Dnet = to_cuda(Dnet)
 	optimizer_generator = torch.optim.Adam(Gnet.parameters(), lr=args.lr, betas=(0.01,0.99))
-	# optimizer_discriminator = torch.optim.Adam(Dnet.parameters(), lr=4*args.lr, betas=(0.5,0.9))
+	optimizer_discriminator = torch.optim.Adam(Dnet.parameters(), lr=4*args.lr, betas=(0.01,0.99)) # 0.5,0.9
 	Gnet.load_state_dict(netG_state_dict)
-	# Dnet.load_state_dict(netD_state_dict)
+	Dnet.load_state_dict(netD_state_dict)
 	optimizer_generator.load_state_dict(optG_state_dict)
-	# optimizer_discriminator.load_state_dict(optD_state_dict)
+	optimizer_discriminator.load_state_dict(optD_state_dict)
 	cur_epoch = whole_model['epoch']
 	total_iters = whole_model['total_iters']
 	lr = whole_model['lr']
