@@ -34,6 +34,17 @@ def compute_PSNR(img1, img2, data_range):
         mse_ = compute_MSE(img1, img2)
         return 10 * np.log10((data_range ** 2) / mse_)
 
+def compute_CNR(img1,img2):
+    if type(img1) == torch.Tensor:
+        C = torch.mean(img1, unbiased=False) - torch.mean(img2, unbiased=False)
+        N = torch.std(img2)
+        CNR = C/N
+        return CNR.item()
+    else:
+        C = np.mean(img1) - np.mean(img2)
+        N = np.std(img2)
+        CNR = C/N
+        return CNR
 
 def compute_SSIM(img1, img2, data_range, window_size=11, channel=1, size_average=True):
     # referred from https://github.com/Po-Hsun-Su/pytorch-ssim

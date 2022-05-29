@@ -55,6 +55,7 @@ def get_pixels_hu(slices):
             image[slice_number] = slope * image[slice_number].astype(np.float64)
             image[slice_number] = image[slice_number].astype(np.int16)
         image[slice_number] += np.int16(intercept)
+    # return normalize_(np.array(image, dtype=np.int16))                # Normalizes images
     return np.array(image, dtype=np.int16)
 
 
