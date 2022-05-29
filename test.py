@@ -20,14 +20,14 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--mode', type=str, default='test')
 parser.add_argument('--load_mode', type=int, default=1)
 parser.add_argument('--saved_path', type=str, default='./patient/data/npy_img/')
-parser.add_argument('--save_path', type=str, default='./model/')
-parser.add_argument('--results_path', type=str, default='./model/results/')
+parser.add_argument('--save_path', type=str, default='./normalized_model/')
+parser.add_argument('--results_path', type=str, default='./normalized_model/results/')
 parser.add_argument('--data_path', type=str, default='./patient/Checkpoint/save/fig/')
 parser.add_argument('--test_patient', type=str, default='L064')
 parser.add_argument('--result_fig', type=bool, default=True)
 
 parser.add_argument('--norm_range_min', type=float, default=-1024.0)
-parser.add_argument('--norm_range_max', type=float, default=3072.0)
+parser.add_argument('--norm_range_max', type=float, default=3071.0)
 parser.add_argument('--trunc_min', type=float, default=-160.0)      # default=-160.0
 parser.add_argument('--trunc_max', type=float, default=240.0)       # default=240.0
 
@@ -65,8 +65,12 @@ def denormalize_(image):
     image = image * (args.norm_range_max - args.norm_range_min) + args.norm_range_min
     return image
 
-def normalize_(image, MIN_B=-160.0, MAX_B=240.0):
-    image = (image - MIN_B) / (MAX_B - MIN_B)
+# def normalize_(image, MIN_B=-160.0, MAX_B=240.0):
+#     image = (image - MIN_B) / (MAX_B - MIN_B)
+#     return image
+
+def normalize_(image):
+    image = (image - args.norm_range_min) / (args.norm_range_max - args.norm_range_min)
     return image
 
 def trunc(mat):
@@ -82,7 +86,7 @@ def save_fig(x, y, pred, fig_name, original_result, pred_result):
     ax[0].set_xlabel("PSNR: {:.4f}\nSSIM: {:.4f}\nRMSE: {:.4f}".format(original_result[0],
                                                                        original_result[1],
                                                                        original_result[2]), fontsize=20)
-    ax[1].imshow(pred, cmap=plt.cm.gray)#, vmin=args.trunc_min, vmax=args.trunc_max)
+    ax[1].imshow(pred, cmap=plt.cm.gray, vmin=args.trunc_min, vmax=args.trunc_max)
     ax[1].set_title('Result', fontsize=30)
     ax[1].set_xlabel("PSNR: {:.4f}\nSSIM: {:.4f}\nRMSE: {:.4f}".format(pred_result[0],
                                                                        pred_result[1],
@@ -117,21 +121,28 @@ with torch.no_grad():
         x = x.unsqueeze(0).float()
         y = y.unsqueeze(0).float()
 
-        x = to_cuda(x)
         y = to_cuda(y)
+        x = to_cuda(x)
+        x = normalize_(x)
         
         pred = netG(x)
+        print(pred)
+        quit()
+
+        x = denormalize_(x)
+        pred = denormalize_(pred)
 
         # Reshaping pred for computing measurements
         x = x.view(shape_, shape_).cpu().detach()
         y = y.view(shape_, shape_).cpu().detach()
-        # pred = pred.view(shape_, shape_).cpu().detach()
+        pred = pred.view(shape_, shape_).cpu().detach()
         # x = trunc(denormalize_(x.view(shape_, shape_).cpu().detach()))
         # y = trunc(denormalize_(y.view(shape_, shape_).cpu().detach()))
-        pred = trunc(denormalize_(pred.view(shape_, shape_).cpu().detach()))
+        # pred = trunc(denormalize_(pred.view(shape_, shape_).cpu().detach()))
 
         # Computing Measures
-        data_range = args.trunc_max - args.trunc_min
+        # data_range = args.trunc_max - args.trunc_min
+        data_range = args.norm_range_max - args.norm_range_min
 
         # original_result, pred_result = compute_measure(input, target, pred, data_range)
         original_result, pred_result = compute_measure(x, y, pred, data_range)
@@ -150,7 +161,7 @@ with torch.no_grad():
 
         if args.result_fig:
             save_fig(x, y, pred, i, original_result, pred_result)
-            pred=normalize_(pred.numpy())
+            # pred=normalize_(pred.numpy())
             pred=torch.Tensor(pred)
             utils.save_image(pred, os.path.join(args.results_path, 'Pred_{}.png'.format(i)))
 

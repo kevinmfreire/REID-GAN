@@ -28,13 +28,13 @@ parser.add_argument('--mode', type=str, default='train')
 parser.add_argument('--load_mode', type=int, default=1)
 parser.add_argument('--data_path', type=str, default='./patient')
 parser.add_argument('--saved_path', type=str, default='./patient/data/npy_img/')
-parser.add_argument('--save_path', type=str, default='./model/')
+parser.add_argument('--save_path', type=str, default='./normalized_model/')
 parser.add_argument('--test_patient', type=str, default='L064')
 
 parser.add_argument('--save_iters', type=int, default=10)
 parser.add_argument('--print_iters', type=int, default=50)
 parser.add_argument('--decay_iters', type=int, default=6000)
-parser.add_argument('--gan_alt', type=int, default=5)
+parser.add_argument('--gan_alt', type=int, default=2)
 
 parser.add_argument('--transform', type=bool, default=False)
 # if patch training, batch size is (--patch_n * --batch_size)
@@ -44,11 +44,12 @@ parser.add_argument('--batch_size', type=int, default=16)	# default = 5
 parser.add_argument('--image_size', type=int, default=512)
 
 parser.add_argument('--lr', type=float, default=1e-4) # Defailt = 1e-3
-
 parser.add_argument('--num_epochs', type=int, default=500)
 parser.add_argument('--num_workers', type=int, default=4)
-parser.add_argument('--load_chkpt', type=bool, default=True)
+parser.add_argument('--load_chkpt', type=bool, default=False)
 
+parser.add_argument('--norm_range_min', type=float, default=-1024.0)
+parser.add_argument('--norm_range_max', type=float, default=3071.0)
 
 args = parser.parse_args()
 
@@ -68,6 +69,14 @@ Tensor = torch.cuda.FloatTensor if cuda_is_present else torch.FloatTensor
 
 def to_cuda(data):
     	return data.cuda() if cuda_is_present else data
+
+def denormalize_(image):
+    image = image * (args.norm_range_max - args.norm_range_min) + args.norm_range_min
+    return image
+
+def normalize_(image):
+    image = (image - args.norm_range_min) / (args.norm_range_max - args.norm_range_min)
+    return image
 
 image_size = args.image_size if args.patch_size == None else args.patch_size
 
@@ -113,23 +122,27 @@ Gloss = to_cuda(Gloss)
 losses = []
 train_dis = True
 torch.autograd.set_detect_anomaly(True)
-
+gen_count = 0
 start_time = time.time()
 tq_epoch = tqdm(range(cur_epoch, args.num_epochs),position=1, leave=True, desc='Epochs')
+print("Training Discriminator")
 for epoch in tq_epoch:
-    	
+
 	# Initializing sum of losses for discriminator and generator
 	gloss_sum, dloss_sum, count = 0, 0, 0
-    	
+	
 	# Alteranating training between discriminator and generator
-	if epoch % args.gan_alt == 0:
-		print('Training Discriminator and Generator' if train_dis else 'Training Only Generator')
-		d_net.train(train_dis)
-		train_dis = not train_dis
-	
-	# Training generator
-	g_net.train(True)
-	
+	train_gen = gen_count >= args.gan_alt
+	if not train_gen:
+		print(f"Training Discriminator {gen_count+1}")
+	else:
+		print(f"Training Generator  {gen_count - 1}")
+	g_net.train(train_gen)
+	d_net.train(not train_gen)
+	gen_count += 1
+	if gen_count == args.gan_alt*5 + args.gan_alt:
+		gen_count = 0
+
 	data_tqdm = tqdm(data_loader, position=0, leave=True, desc='Iters')
 	for i, (x, y) in enumerate(data_tqdm):
 		total_iters += 1
@@ -150,11 +163,13 @@ for epoch in tq_epoch:
 			x = x.view(-1, 1, shape_, shape_)
 			y = y.view(-1, 1, shape_, shape_)
 
-		x = to_cuda(x)
 		y = to_cuda(y)
+		x = to_cuda(x)
+		x = normalize_(x)
 
 		# Predictions
 		pred = g_net(x)
+		pred = denormalize_(pred)
 
 		# Training discriminator
 		optimizer_discriminator.zero_grad()
@@ -172,7 +187,6 @@ for epoch in tq_epoch:
 		gloss = Gloss(Dg, pred, y)
 		gloss.backward()
 		optimizer_generator.step()
-
 		dloss_sum += dloss.item()
 		gloss_sum += gloss.item()
 		
@@ -183,7 +197,7 @@ for epoch in tq_epoch:
 		# 																								args.num_epochs, i+1, 
 		# 																								len(data_loader), gloss.item(), dloss.item()
 		# 																								,time.time() - start_time))
-		data_tqdm.set_postfix({'ITER': i+1, 'G_LOSS': gloss.item(), 'D_LOSS': dloss.item()})
+		data_tqdm.set_postfix({'ITER': i+1, 'G_LOSS': '{:.5f}'.format(gloss.item()), 'D_LOSS': '{:.8f}'.format(dloss.item())})
 		if total_iters % args.decay_iters == 0:
 			lr = lr * 0.5
 			for param_group in optimizer_generator.param_groups:
@@ -209,7 +223,7 @@ for epoch in tq_epoch:
 			# torch.save(saved_model, '{}iter_{}_ckpt.pth.tar'.format(args.save_path, total_iters))
 			torch.save(saved_model, '{}latest_ckpt.pth.tar'.format(args.save_path))
 			# save_model(saved_model, '{}latest_ckpt.pth.tar'.format(args.save_path))
-			cmd = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/model/'.format(args.save_path)
+			cmd = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/normalized_model/'.format(args.save_path)
 			os.system(cmd)
 	
 	# Calculating average loss
@@ -220,11 +234,11 @@ for epoch in tq_epoch:
 	# 																									args.num_epochs, i+1, 
 	# 																									len(data_loader), avg_gloss, avg_dloss
 	# 																									,time.time() - start_time))
-	tq_epoch.set_postfix({'STEP': total_iters,'AVG_G_LOSS': avg_gloss, 'AVG_D_LOSS': avg_dloss})
+	tq_epoch.set_postfix({'STEP': total_iters,'AVG_G_LOSS': '{:.5f}'.format(avg_gloss), 'AVG_D_LOSS': '{:.8f}'.format(avg_dloss)})
 	# Saving model after every 10 epoch
 	if epoch % 10 == 0:
-		cmd1 = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/model/epoch_{}_ckpt.pth.tar'.format(args.save_path, epoch)
-		cmd2 = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/model/'.format(args.save_path)
+		cmd1 = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/normalized_model/epoch_{}_ckpt.pth.tar'.format(args.save_path, epoch)
+		cmd2 = 'cp {}latest_ckpt.pth.tar /gdrive/MyDrive/normalized_model/'.format(args.save_path)
 		os.system(cmd1)
 		os.system(cmd2)
 	losses.append((gloss.item(), dloss.item()))

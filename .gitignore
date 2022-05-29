@@ -2,3 +2,8 @@ RyersonSgsThesisTemplateLatex
 __pycache__
 patient/data
 rigan_model
+paper/*.pdf
+paper/*.gz
+patient/data/
+paper/*.aux
+paper/*.log
