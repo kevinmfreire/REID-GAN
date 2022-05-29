@@ -100,7 +100,7 @@ cuda_is_present = True if torch.cuda.is_available() else False
 Tensor = torch.cuda.FloatTensor if cuda_is_present else torch.FloatTensor
 
 # load
-test_samples = [x for x in range(28, 37, 2)]
+test_samples = [28]
 for epoch_sample in test_samples:
 
     whole_model = torch.load(args.save_path + 'epoch_{}_ckpt.pth.tar'.format(epoch_sample), map_location=torch.device('cuda' if cuda_is_present else 'cpu'))
@@ -128,9 +128,12 @@ for epoch_sample in test_samples:
             pred = netG(x)
 
             # Reshaping pred for computing measurements
-            x = trunc(denormalize_(x.view(shape_, shape_).cpu().detach()))
-            y = trunc(denormalize_(y.view(shape_, shape_).cpu().detach()))
-            pred = trunc(denormalize_(pred.view(shape_, shape_).cpu().detach()))
+            # x = trunc(denormalize_(x.view(shape_, shape_).cpu().detach()))
+            # y = trunc(denormalize_(y.view(shape_, shape_).cpu().detach()))
+            # pred = trunc(denormalize_(pred.view(shape_, shape_).cpu().detach()))
+            x = trunc(x.view(shape_, shape_).cpu().detach())
+            y = trunc(y.view(shape_, shape_).cpu().detach())
+            pred = trunc(pred.view(shape_, shape_).cpu().detach())
 
             # Computing Measures
             data_range = args.trunc_max - args.trunc_min

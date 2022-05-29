@@ -4,13 +4,15 @@ import numpy as np
 
 # Visualize one loss only
 path = './rigan_model/'
-total_loss = np.load(path + 'total_loss.npy', allow_pickle=True)
+# total_loss = np.load(path + 'total_loss.npy', allow_pickle=True)
 # total_loss = np.load(path + 'loss_arr.npy', allow_pickle=True)
-# loss = np.load(path + 'loss_arr (1).npy', allow_pickle=True)
-# total_loss1 = np.concatenate((total_loss, loss), axis=0)
-# losses = np.array(total_loss1)
-# save_loss = path + 'total_loss.npy'
-# np.save(save_loss, losses[:51], allow_pickle=True)
+loss0 = np.load(path + 'loss_arr.npy', allow_pickle=True)
+loss1 = np.load(path + 'loss_arr (1).npy', allow_pickle=True)
+loss2 = np.load(path + 'loss_arr (2).npy', allow_pickle=True)
+total_loss = np.concatenate((loss0, loss1, loss2), axis=0)
+losses = np.array(total_loss)
+save_loss = path + 'total_loss.npy'
+np.save(save_loss, losses, allow_pickle=True)
 # print(total_loss)
 # print(loss[:5])
 # quit()
