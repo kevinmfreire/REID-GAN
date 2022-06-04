@@ -1,13 +1,13 @@
 # ldct-denoising
 
 ## Table of content
-* [Overview]()
-* [Background and Motivation]()
-* [Objective]()
-* [Dataset]()
-* [Practical Applications]()
-* [Usage]()
-* [References]()
+* [Overview](https://github.com/kevinmfreire/ldct-denoising#overview)
+* [Background and Motivation](https://github.com/kevinmfreire/ldct-denoising#background-and-motivation)
+* [Objective](https://github.com/kevinmfreire/ldct-denoising#objective)
+* [Dataset](https://github.com/kevinmfreire/ldct-denoising#dataset)
+* [Practical Applications](https://github.com/kevinmfreire/ldct-denoising#practical-applications)
+* [Usage](https://github.com/kevinmfreire/ldct-denoising#usage)
+* [References](https://github.com/kevinmfreire/ldct-denoising#references)
 
 ## Overview
 Medical Imaging has been a growing topic in computer vision for its life saving applications.  Medical professionals rely on good quality images of their medical scans in order to correctly identify tumours or other anomalies.  Recent studies have shown that Computerize Tomography CT scans have great results using high radiations for their X-Rays.  Studies have shown that these (CT) Scans have produced more than half the radiation from medical use which results in problems for long term use of these expensive machines.  Some solutions have involved reducing the X-Ray magnitude in order to reduce exposure to X-Ray but this results in lower quality images with a lot of noise.  We implemented a denoising neural network trained on medical images to reduce the noise from low dose CT Scans.  This model is capable of producing high dose quality imaging using low dose CT Scans at a reasonable rate.
