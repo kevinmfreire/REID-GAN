@@ -63,3 +63,11 @@ python test.py
 Szegedy, C., Vanhoucke, V., Ioffe, S., Shlens, J., & Wojna, Z. (2016). 
 Rethinking the inception architecture for computer vision. 
 In Proceedings of the IEEE conference on computer vision and pattern recognition (pp. 2818-2826).
+
+<a id="2">[2]</a> 
+He, K., Zhang, X., Ren, S., & Sun, J. (2016). 
+Deep residual learning for image recognition. 
+In Proceedings of the IEEE conference on computer vision and pattern recognition (pp. 770-778).
+
+<a id="3">[3]</a> 
+[GitHub Repository by pytorch/vision](https://github.com/pytorch/vision/tree/9fa8000dff145a5f5500b3f40d444adddb9c2ace/torchvision/models)
