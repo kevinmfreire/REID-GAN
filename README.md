@@ -58,3 +58,8 @@ python test.py
 ```
 
 ## References
+
+<a id="1">[1]</a> 
+Szegedy, C., Vanhoucke, V., Ioffe, S., Shlens, J., & Wojna, Z. (2016). 
+Rethinking the inception architecture for computer vision. 
+In Proceedings of the IEEE conference on computer vision and pattern recognition (pp. 2818-2826).
